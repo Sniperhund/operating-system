@@ -1,0 +1,4 @@
+dist/
+iso_root/boot/kernel.elf
+compile_commands.json
+kernel.iso
