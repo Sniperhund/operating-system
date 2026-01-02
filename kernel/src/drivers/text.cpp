@@ -13,6 +13,11 @@ void Text::init() {
 }
 
 void Text::putc(const char c) {
+    if (c == '\n') {
+        newLine();
+        return;
+    }
+
     video[s_row * MAX_COLS + s_col] = c | (s_color << 8);
 
     s_col++;
@@ -40,4 +45,9 @@ void Text::clear() {
     for (int i = 0; i < MAX_COLS * MAX_ROWS; i++) {
         video[i] = ' ' | (s_color << 8);
     }
+}
+
+void Text::newLine() {
+    s_row++;
+    s_col = 0;
 }

@@ -30,6 +30,8 @@ public:
     static void clear();
 
 private:
+    static void newLine();
+
     static uint16_t s_color;
     static uint8_t s_col, s_row;
 };
