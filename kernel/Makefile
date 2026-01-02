@@ -2,17 +2,21 @@ ASM_SOURCE_FILES := $(shell find src -name '*.asm')
 ASM_SOURCE_FILES_WITHOUT_SRC := $(patsubst src/%,dist/asm/%,$(ASM_SOURCE_FILES))
 ASM_OBJECT_FILES := $(patsubst %.asm,%.o,$(ASM_SOURCE_FILES_WITHOUT_SRC))
 
-C_SOURCE_FILES := $(shell find src -name '*.c')
-C_SOURCE_FILES_WITHOUT_SRC := $(patsubst src/%,dist/c/%,$(C_SOURCE_FILES))
-C_OBJECT_FILES := $(patsubst %.c,%.o,$(C_SOURCE_FILES_WITHOUT_SRC))
+CPP_SOURCE_FILES := $(shell find src -name '*.cpp')
+CPP_SOURCE_FILES_WITHOUT_SRC := $(patsubst src/%,dist/cpp/%,$(CPP_SOURCE_FILES))
+CPP_OBJECT_FILES := $(patsubst %.cpp,%.o,$(CPP_SOURCE_FILES_WITHOUT_SRC))
 
 # Nasm compiler and flags
 NASM = nasm
 NASM_FLAGS = -f elf -g -F dwarf
 
 # C compiler and flags
-CC = i686-elf-gcc
-C_FLAGS = -g -Wall -Wextra -ffreestanding -nostdlib -nostartfiles -Isrc -Isrc/stdlibs
+CPPC = i686-elf-g++
+CPP_FLAGS = -g -Wall -Wextra -ffreestanding -nostdlib -nostartfiles -Isrc -Isrc/stdlibs
+
+override CPP_FLAGS += \
+    -fno-exceptions \
+	-fno-rtti
 
 # Linker and flags
 LD = i686-elf-ld
@@ -30,20 +34,14 @@ dist/asm/%.o: src/%.asm
 	mkdir -p $(dir $@)
 	$(NASM) $(NASM_FLAGS) $< -o $@
 
-dist/c/%.o: src/%.c
+dist/cpp/%.o: src/%.cpp
 	mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) -c $< -o $@
+	$(CPPC) $(CPP_FLAGS) -c $< -o $@
 
-# Toolchain for building the 'limine' executable for the host.
-HOST_CC := cc
-HOST_CFLAGS := -g -O2 -pipe
-HOST_LDFLAGS :=
-HOST_LIBS :=
-
-$(KERNEL_ELF_OUTPUT): $(ASM_OBJECT_FILES) $(C_OBJECT_FILES)
+$(KERNEL_ELF_OUTPUT): $(ASM_OBJECT_FILES) $(CPP_OBJECT_FILES)
 	mkdir -p iso_root/boot
 
-	$(LD) $(LD_FLAGS) $(ASM_OBJECT_FILES) $(C_OBJECT_FILES) -o $@
+	$(LD) $(LD_FLAGS) $(ASM_OBJECT_FILES) $(CPP_OBJECT_FILES) -o $@
 
 	grub-mkrescue -o kernel.iso iso_root
 

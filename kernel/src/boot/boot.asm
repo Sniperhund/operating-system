@@ -17,5 +17,14 @@ global start
 
 section .text
 start:
-    mov dword [0xb8000], 0x07690748
+    mov esp, stack_end
+
+    extern kernel_main
+    call kernel_main
+
     hlt
+
+section .bss
+stack_start:
+    resb 1024 * 16 ; 16 KiB
+stack_end:
