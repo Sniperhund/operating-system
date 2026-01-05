@@ -1,4 +1,5 @@
 #include "text.h"
+#include <string.h>
 
 volatile uint16_t* video = (volatile uint16_t*)0xB8000;
 
@@ -23,8 +24,7 @@ void Text::putc(const char c) {
     s_col++;
 
     if (s_col == MAX_COLS) {
-        s_row++;
-        s_col = 0;
+        newLine();
     }
 }
 
@@ -50,4 +50,17 @@ void Text::clear() {
 void Text::newLine() {
     s_row++;
     s_col = 0;
+
+    if (s_row >= MAX_ROWS) {
+        s_row = MAX_ROWS - 1;
+
+        memmove((void*)video, (void*)(video + MAX_COLS), (MAX_ROWS - 1) * MAX_COLS * sizeof(uint16_t));
+        
+        uint16_t blank = ' ' | (s_color << 8);
+        volatile uint16_t* row = video + (MAX_ROWS - 1) * MAX_COLS;
+
+        for (size_t i = 0; i < MAX_COLS; i++) {
+            row[i] = blank;
+        }
+    }
 }
