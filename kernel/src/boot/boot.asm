@@ -22,7 +22,9 @@ start:
     extern kernel_main
     call kernel_main
 
+.end:
     hlt
+    jmp .end
 
 section .bss
 stack_start:
