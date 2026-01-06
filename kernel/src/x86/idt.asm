@@ -13,9 +13,7 @@ isr_stub_%+%1:
     jmp isr_common_stub
 %endmacro
 
-extern exceptionHandlerC
-
-isr_common_stub:
+%macro PUSHALL 0
     pushad
 
     mov ax, ds
@@ -29,7 +27,10 @@ isr_common_stub:
 
     mov eax, esp
     push eax
-    call exceptionHandlerC
+%endmacro
+
+%macro POPALL 0
+    add esp, 4
 
     pop eax
     mov ds, ax
@@ -39,6 +40,14 @@ isr_common_stub:
 
     popad
     add esp, 8
+%endmacro
+
+extern exceptionHandlerC
+
+isr_common_stub:
+    PUSHALL
+    call exceptionHandlerC
+    POPALL
     sti
     iret
 
@@ -80,5 +89,30 @@ isr_stub_table:
 %assign i 0
 %rep    32
     dd isr_stub_%+i
+%assign i i+1
+%endrep
+
+%macro irq 1
+irq_stub_%+%1:
+    push byte 0
+    push byte %1
+    PUSHALL
+    call irqHandlerC
+    POPALL
+    iret
+%endmacro
+
+extern irqHandlerC
+%assign i 0
+%rep    16
+irq i
+%assign i i+1
+%endrep
+
+global irq_stub_table
+irq_stub_table:
+%assign i 0
+%rep    16
+    dd irq_stub_%+i
 %assign i i+1
 %endrep
