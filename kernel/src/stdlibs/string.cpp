@@ -107,3 +107,8 @@ char* strrev(char* str) {
 
     return str;
 }
+
+char toupper(char c) {
+    const char offset = 'a' - 'A';
+    return (c >= 'a' && c <= 'z') ? c -= offset : c;
+}

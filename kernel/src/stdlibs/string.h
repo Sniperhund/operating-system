@@ -11,3 +11,5 @@ int itoa(int value, char* buffer, int base);
 
 size_t strlen(const char* start);
 char* strrev(char* str);
+
+char toupper(char c);
