@@ -48,3 +48,62 @@ void* memmove(void* dest, const void* src, size_t count) {
 int memcmp(const void* lhs, const void* rhs, size_t count) {
 
 }
+
+
+int itoa(int value, char *buffer, int base) {
+    char digits[] = "0123456789abcdef";
+    int i = 0;
+    bool negative = false;
+
+    if (value == 0) {
+        buffer[i++] = '0';
+        buffer[i] = '\0';
+        return i;
+    }
+
+    if (base == 10 && value < 0) {
+        negative = true;
+        value = -value;
+    }
+
+    while (value != 0) {
+        int remainder = value % base;
+        buffer[i++] = digits[remainder];
+        value /= base;
+    }
+
+    if (negative) {
+        buffer[i++] = '-';
+    }
+
+    buffer[i] = '\0';
+    
+    strrev(buffer);
+    return i;
+}
+
+size_t strlen(const char *start) {
+    const char* end = start;
+    while (*end != '\0')
+        ++end;
+    return end - start;
+}
+
+char* strrev(char* str) {
+    if (!str || !*str) {
+        return str;
+    }
+
+    int i = strlen(str) - 1, j = 0;
+    char ch;
+    
+    while (i > j) {
+        ch = str[i];
+        str[i] = str[j];
+        str[j] = ch;
+        i--;
+        j++;
+    }
+
+    return str;
+}
