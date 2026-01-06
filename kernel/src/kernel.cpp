@@ -5,18 +5,11 @@
 #include "x86/io.h"
 #include "x86/irq.h"
 #include "x86/pic.h"
+#include "drivers/keyboard.h"
 #include <stdio.h>
 
 void timer(CPUStatus* status) {
     printf(".");
-}
-
-void keyboard(CPUStatus* status) {
-    uint8_t scancode = inb(0x60);
-
-    if (scancode & 0x80) return;
-
-    printf("%X", scancode);
 }
 
 extern "C" void kernel_main() {
@@ -31,8 +24,8 @@ extern "C" void kernel_main() {
 
     PIC::remap();
     IDT::init();
-    IRQ::registerIRQ(0, timer);
-    IRQ::registerIRQ(1, keyboard);
+    //IRQ::registerIRQ(0, timer);
+    Keyboard::init(true);
 
     Text::puts("IDT enabled\n");
     printf("Number: %d\n", 12);
