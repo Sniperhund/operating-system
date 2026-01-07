@@ -23,7 +23,7 @@ public:
         uint16_t isrHigh;
     } __attribute__((packed));
 
-    static void init();
+    static int init();
 
 private:
     struct IDTR {

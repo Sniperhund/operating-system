@@ -4,7 +4,9 @@
 GDT::Descriptor GDT::s_gdt[GDT_SIZE];
 GDT::GDTR GDT::s_gdtr;
 
-void GDT::init() {
+int GDT::init(bool defaultDesc) {
+    if (defaultDesc) defaultDescriptors();
+
     s_gdtr.base = (uintptr_t)&s_gdt;
     s_gdtr.limit = sizeof(s_gdt) - 1;
 
@@ -21,6 +23,8 @@ void GDT::init() {
         "mov %%ax, %%ss \n"
         : : : "ax", "memory"
     );
+
+    return 0;
 }
 
 void GDT::defaultDescriptors() {

@@ -7,6 +7,7 @@
 #include "x86/pic.h"
 #include "drivers/keyboard.h"
 #include <stdio.h>
+#include "debug.h"
 
 void timer(CPUStatus* status) {
     printf(".");
@@ -15,18 +16,12 @@ void timer(CPUStatus* status) {
 extern "C" void kernel_main() {
     Text::setColor(Text::BLACK, Text::LIGHT_BLUE);
     Text::init();
-    Text::puts("Hello, world\n");
 
-    GDT::defaultDescriptors();
-    GDT::init();
-
-    Text::puts("GDT switch\n");
-
-    PIC::remap();
-    IDT::init();
+    DO_INIT("Initializing GDT", GDT::init(true));
+    DO_INIT("Initialising PIC", PIC::remap());
+    DO_INIT("Initialising IDT", IDT::init());
     //IRQ::registerIRQ(0, timer);
     Keyboard::init(true);
 
-    Text::puts("IDT enabled\n");
     printf("Number: %d\n", 12);
 }

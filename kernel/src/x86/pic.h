@@ -5,9 +5,9 @@
 class PIC {
 public:
     /**
-     * It gets enabled by default
+     * It gets enabled by default when calling this function
      */
-    static void remap();
+    static int remap();
     static void enable();
     static void disable();
 

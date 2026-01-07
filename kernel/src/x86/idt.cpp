@@ -6,7 +6,7 @@
 IDT::Descriptor IDT::s_idt[IDT_SIZE];
 IDT::IDTR IDT::s_idtr;
 
-void IDT::init() {
+int IDT::init() {
     s_idtr.base = (uintptr_t)&s_idt[0];
     s_idtr.limit = (uint16_t)sizeof(Descriptor) * IDT_SIZE - 1;
 
@@ -24,6 +24,8 @@ void IDT::init() {
 
     asm volatile("lidt %0" : : "m"(s_idtr));
     asm volatile("sti");
+
+    return 0;
 }
 
 void IDT::setDescriptor(uint8_t index, void* isr, uint8_t flags) {

@@ -28,7 +28,10 @@ public:
         uint8_t baseHigh;
     } __attribute__((packed));
 
-    static void init();
+    /**
+     * @param debfaultDescriptors Calls defaultDescriptors() itself
+     */
+    static int init(bool defaultDescriptors = false);
     static void defaultDescriptors();
 
     static void setDescriptor(uint32_t index, const Descriptor& desc);

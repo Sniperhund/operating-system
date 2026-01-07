@@ -52,7 +52,7 @@ clean:
 build: $(KERNEL_ELF_OUTPUT)
 
 run: $(KERNEL_ELF_OUTPUT)
-	qemu-system-x86_64 -cdrom kernel.iso
+	qemu-system-x86_64 -cdrom kernel.iso -serial file:serial.log
 
 run-debug: $(KERNEL_ELF_OUTPUT)
-	qemu-system-x86_64 -s -S -cdrom kernel.iso
+	qemu-system-x86_64 -s -S -cdrom kernel.iso -serial file:serial.log

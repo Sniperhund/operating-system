@@ -22,7 +22,7 @@
 
 #define CASCADE_IRQ 2
 
-void PIC::remap() {
+int PIC::remap() {
     outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);
     ioWait();
     outb(PIC2_COMMAND, ICW1_INIT | ICW1_ICW4);
@@ -42,6 +42,8 @@ void PIC::remap() {
     ioWait();
 
     enable();
+
+    return 0;
 }
 
 void PIC::enable() {
