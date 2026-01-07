@@ -1,5 +1,8 @@
 #include "text.h"
 #include <string.h>
+#include "debug.h"
+#include "serial.h"
+#include <stdio.h>
 
 volatile uint16_t* video = (volatile uint16_t*)0xB8000;
 
@@ -11,6 +14,7 @@ uint8_t Text::s_col = 0, Text::s_row = 0;
 
 void Text::init() {
     clear();
+    DO_INIT("Initialising Serial", Serial::init());
 }
 
 void Text::putc(const char c) {

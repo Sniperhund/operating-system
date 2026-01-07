@@ -1,4 +1,5 @@
 #include "stdio.h"
+#include "drivers/serial.h"
 #include "drivers/text.h"
 #include "string.h"
 
@@ -11,6 +12,7 @@ int printf(const char* format, ...) {
     int ret = vsprintf(buffer, format, arg);
 
     Text::puts(buffer);
+    Serial::puts(buffer);
 
     va_end(arg);
 
