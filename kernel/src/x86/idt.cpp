@@ -39,7 +39,13 @@ void IDT::setDescriptor(uint8_t index, void* isr, uint8_t flags) {
 }
 
 void IDT::exceptionHandler(CPUStatus* status) {
-    printf("Exception: %d", status->intNo);
+    printf("Exception: 0x%X\nError code: %x\n", status->intNo, status->errCode);
+
+    if (status->intNo == 0xE) {
+        unsigned long val;
+        asm volatile ( "mov %%cr2, %0" : "=r"(val) );
+        printf("CR2: 0x%x", val);
+    }
 
     while (true) {
         asm volatile("cli; hlt");
