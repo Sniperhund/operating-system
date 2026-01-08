@@ -1,0 +1,127 @@
+#include "paging.h"
+#include "x86/memory/pmm.h"
+#include <string.h>
+#include <stdio.h>
+
+#define LOAD_MEMORY_ADDRESS 0xC0000000
+
+#define PAGE_SIZE 4096
+
+bool Paging::enabled = false;
+Paging::PD* Paging::kernelDir = nullptr;
+
+extern char kernel_start[];
+extern char kernel_end[];
+
+void Paging::init() {
+    // Mark reserved 0-1MB 
+    for (uint32_t addr = 0; addr < 0x100000; addr += PAGE_SIZE) {
+        PMM::mark(PMM::physToFrame((void*)addr));
+    }
+
+    // Mark kernel itself
+    uint32_t phys_start = (uint32_t)kernel_start - LOAD_MEMORY_ADDRESS;
+    uint32_t phys_end   = (uint32_t)kernel_end   - LOAD_MEMORY_ADDRESS;
+
+    for (uint32_t addr = phys_start; addr < phys_end; addr += PAGE_SIZE) {
+        PMM::mark(PMM::physToFrame((void*)addr));
+    }
+
+    uint32_t ptFrame = PMM::findFirstFreeFrame(2);
+    PMM::mark(ptFrame);
+    PMM::mark(ptFrame + 1);
+    kernelDir = (PD*)(ptFrame * PAGE_SIZE + LOAD_MEMORY_ADDRESS);
+    memset(kernelDir, 0, sizeof(PD));
+
+    mapregion(kernelDir, 0, (void*)0x100000, 0);
+    mapregion(nullptr, (void*)(LOAD_MEMORY_ADDRESS), (void*)(LOAD_MEMORY_ADDRESS + 0x400000), 0);
+
+    switchPD(kernelDir, false);
+
+    uint32_t cr4;
+
+    asm volatile("mov %%cr4, %0" : "=r"(cr4));
+    cr4 = cr4 & 0xffffffef;
+    asm volatile("mov %0, %%cr4" :: "r"(cr4));
+
+    enabled = true;
+}
+
+void* Paging::virtToPhys(PD* dir, void* virt) {
+    if (!dir) dir = kernelDir;
+
+    // This is only for the time between TEMP_PD and the real paging gets enabled
+    if (!enabled) return (void*)((uint32_t)virt - LOAD_MEMORY_ADDRESS);
+
+    uint32_t pdIdx = PD_INDEX(virt), ptIdx = PT_INDEX(virt), offset = PAGE_OFFSET(virt);
+    
+    if (!dir->refTables[pdIdx]) return nullptr;
+    PT* pt = dir->refTables[pdIdx];
+
+    if (!pt->pages[ptIdx].present) return nullptr;
+    uint32_t frame = pt->pages[ptIdx].frame;
+    
+    return (void*)((frame << 12) + offset);
+}
+
+int Paging::mapregion(PD* dir, void* virtStart, void* virtEnd, void* physStart) {
+    if (!dir) dir = kernelDir;
+    
+    uint32_t vStart = PAGE_ALIGNDOWN(virtStart);
+    uint32_t vEnd = PAGE_ALIGNDOWN(virtEnd);
+    uint32_t pStart = PAGE_ALIGNDOWN(physStart);
+
+    while (vStart < vEnd) {
+        mappage(dir, (void*)vStart, PMM::physToFrame((void*)pStart));
+        vStart += PAGE_SIZE;
+        pStart += PAGE_SIZE;
+    }
+
+    return 0;
+}
+
+int Paging::mappage(PD *dir, void *virt, size_t frame) {
+    if (!dir) dir = kernelDir;
+
+    uint32_t pdIdx = PD_INDEX(virt), ptIdx = PT_INDEX(virt);
+    
+    PT* table = dir->refTables[pdIdx];
+    if (!table) {
+        uint32_t ptFrame = PMM::findFirstFreeFrame();
+        PMM::mark(ptFrame);
+        table = (PT*)(ptFrame * PAGE_SIZE + LOAD_MEMORY_ADDRESS);
+
+        memset((void*)((uint32_t)table), 0, 4096);
+
+        dir->tables[pdIdx].frame = ptFrame;
+        dir->tables[pdIdx].present = 1;
+        dir->tables[pdIdx].rw = 1;
+        dir->tables[pdIdx].user = 0;
+        dir->tables[pdIdx].page_size = 0;
+
+        dir->refTables[pdIdx] = table;
+    }
+
+    if (!table->pages[ptIdx].present) {
+        if (frame) table->pages[ptIdx].frame = frame;
+        else table->pages[ptIdx].frame = PMM::findFirstFreeFrame();
+
+        PMM::mark(table->pages[ptIdx].frame);
+
+        table->pages[ptIdx].present = 1;
+        table->pages[ptIdx].rw = 1;
+        table->pages[ptIdx].user = 0;
+    }
+
+    asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
+
+    return 0;
+}
+
+void Paging::switchPD(PD *dir, bool isPhysAddr) {
+    uint32_t phys = 0;
+    if (isPhysAddr) phys = (uint32_t)dir;
+    else phys = (uint32_t)dir - LOAD_MEMORY_ADDRESS;
+    
+    asm volatile("mov %0, %%cr3" : : "r"(phys));
+}
