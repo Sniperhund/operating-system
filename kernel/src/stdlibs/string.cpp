@@ -82,6 +82,26 @@ int itoa(int value, char *buffer, int base) {
     return i;
 }
 
+int utoa(unsigned int value, char *buffer, int base) {
+    char digits[] = "0123456789abcdef";
+    int i = 0;
+
+    if (value == 0) {
+        buffer[i++] = '0';
+        buffer[i] = '\0';
+        return i;
+    }
+
+    while (value != 0) {
+        buffer[i++] = digits[value % base];
+        value /= base;
+    }
+
+    buffer[i] = '\0';
+    strrev(buffer);
+    return i;
+}
+
 size_t strlen(const char *start) {
     const char* end = start;
     while (*end != '\0')

@@ -42,19 +42,19 @@ int vsprintf(char* s, const char* format, va_list args) {
                 }
                 case 'u': {
                     unsigned int val = va_arg(args, unsigned int);
-                    len = itoa(val, buffer, 10);
+                    len = utoa(val, buffer, 10);
                     PRINT_BUFFER;
                     break;
                 }
                 case 'x': {
                     unsigned int val = va_arg(args, unsigned int);
-                    len = itoa(val, buffer, 16);
+                    len = utoa(val, buffer, 16);
                     PRINT_BUFFER;
                     break;
                 }
                 case 'X': {
                     unsigned val = va_arg(args, unsigned int);
-                    len = itoa(val, buffer, 16);
+                    len = utoa(val, buffer, 16);
                     for (int j = 0; j < len; j++) buffer[j] = toupper(buffer[j]);
                     PRINT_BUFFER;
                     break;
@@ -72,19 +72,23 @@ int vsprintf(char* s, const char* format, va_list args) {
                 }
                 case 'p': {
                     uintptr_t ptr = va_arg(args, uintptr_t);
-                    len = itoa(ptr, buffer, 16);
+                    len = utoa(ptr, buffer, 16);
                     PRINT_BUFFER;
                     break;
                 }
                 case 'P': {
                     uintptr_t ptr = va_arg(args, uintptr_t);
-                    len = itoa(ptr, buffer, 16);
+                    len = utoa(ptr, buffer, 16);
                     for (int j = 0; j < len; j++) buffer[j] = toupper(buffer[j]);
                     PRINT_BUFFER;
                     break;
                 }
                 case '%': {
                     s[k++] = '%';
+                }
+                default: {
+                    s[k++] = '?';
+                    break;
                 }
             }
         }
