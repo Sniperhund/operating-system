@@ -53,7 +53,7 @@ void GDT::defaultDescriptors() {
 }
 
 void GDT::setDescriptor(uint32_t index, const Descriptor& desc) {
-    if (index > GDT_SIZE) panic("GDT", "Index over GDT_SIZE");
+    if (index > GDT_SIZE) PANIC("GDT", "Index over GDT_SIZE");
     
     s_gdt[index] = desc;
 }
