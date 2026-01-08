@@ -10,6 +10,7 @@ int printf(const char* format, ...);
   *  u - Unsigned decimal integer
   *  x - Unsigned hexadecimal integer
   *  X - Unsigned hexadecimal integer (uppercase)
+  *  b - Unsigned bit integer
   *  c - Character
   *  s - String of characters
   *  p - Pointer address

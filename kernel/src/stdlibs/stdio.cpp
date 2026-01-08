@@ -53,9 +53,15 @@ int vsprintf(char* s, const char* format, va_list args) {
                     break;
                 }
                 case 'X': {
-                    unsigned val = va_arg(args, unsigned int);
+                    unsigned int val = va_arg(args, unsigned int);
                     len = utoa(val, buffer, 16);
                     for (int j = 0; j < len; j++) buffer[j] = toupper(buffer[j]);
+                    PRINT_BUFFER;
+                    break;
+                }
+                case 'b': {
+                    unsigned int val = va_arg(args, unsigned int);
+                    len = utoa(val, buffer, 2);
                     PRINT_BUFFER;
                     break;
                 }
