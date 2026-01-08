@@ -25,6 +25,18 @@ public:
 
     static int init();
 
+    static constexpr int RECOVER = 0;
+    static constexpr int PRINT_RECOVER = 1;
+    static constexpr int HALT = 2;
+    static constexpr int PRINT_HALT = 3;
+
+    /**
+     * @return 0 for recover, 1 for print regs and recover, 2 for halt, 3 for print and halt
+     */
+    typedef int (*isrHandlerFunc) (CPUStatus*);
+
+    static void registerExceptionHandler(uint8_t isr, isrHandlerFunc func);
+
 private:
     struct IDTR {
         uint16_t limit;
@@ -39,6 +51,8 @@ private:
     friend void ::exceptionHandlerC(CPUStatus* status);
 
     static void exceptionHandler(CPUStatus* status);
+
+    static isrHandlerFunc s_isr[32];
 };
 
 static_assert(sizeof(IDT::Descriptor) == 8, "IDT Descriptor MUST be 8 bytes");
