@@ -24,7 +24,7 @@ extern "C" void kernel_main() {
     DO_INIT("Initialising IDT", IDT::init());
     //IRQ::registerIRQ(0, timer);
     Keyboard::init(true);
-    Paging::init();
+    DO_INIT("Initialising Paging", Paging::init());
 
     printf("D");
 }

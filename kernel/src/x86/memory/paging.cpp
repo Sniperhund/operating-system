@@ -1,4 +1,6 @@
 #include "paging.h"
+#include "panic.h"
+#include "x86/idt.h"
 #include "x86/memory/pmm.h"
 #include <string.h>
 #include <stdio.h>
@@ -8,12 +10,15 @@
 #define PAGE_SIZE 4096
 
 bool Paging::enabled = false;
-Paging::PD* Paging::kernelDir = nullptr;
+Paging::PD* Paging::s_kernelDir = nullptr;
+Paging::PD* Paging::s_currentDir = nullptr;
 
 extern char kernel_start[];
 extern char kernel_end[];
 
-void Paging::init() {
+int Paging::init() {
+    IDT::registerExceptionHandler(0xE, Paging::pageFaultHandler);
+
     // Mark reserved 0-1MB 
     for (uint32_t addr = 0; addr < 0x100000; addr += PAGE_SIZE) {
         PMM::mark(PMM::physToFrame((void*)addr));
@@ -30,13 +35,13 @@ void Paging::init() {
     uint32_t ptFrame = PMM::findFirstFreeFrame(2);
     PMM::mark(ptFrame);
     PMM::mark(ptFrame + 1);
-    kernelDir = (PD*)(ptFrame * PAGE_SIZE + LOAD_MEMORY_ADDRESS);
-    memset(kernelDir, 0, sizeof(PD));
+    s_kernelDir = (PD*)(ptFrame * PAGE_SIZE + LOAD_MEMORY_ADDRESS);
+    memset(s_kernelDir, 0, sizeof(PD));
 
-    mapregion(kernelDir, 0, (void*)0x100000, 0);
+    mapregion(nullptr, 0, (void*)0x100000, 0);
     mapregion(nullptr, (void*)(LOAD_MEMORY_ADDRESS), (void*)(LOAD_MEMORY_ADDRESS + 0x400000), 0);
 
-    switchPD(kernelDir, false);
+    switchPD(s_kernelDir, false);
 
     uint32_t cr4;
 
@@ -45,10 +50,12 @@ void Paging::init() {
     asm volatile("mov %0, %%cr4" :: "r"(cr4));
 
     enabled = true;
+
+    return 0;
 }
 
 void* Paging::virtToPhys(PD* dir, void* virt) {
-    if (!dir) dir = kernelDir;
+    if (!dir) dir = s_kernelDir;
 
     // This is only for the time between TEMP_PD and the real paging gets enabled
     if (!enabled) return (void*)((uint32_t)virt - LOAD_MEMORY_ADDRESS);
@@ -65,9 +72,10 @@ void* Paging::virtToPhys(PD* dir, void* virt) {
 }
 
 int Paging::mapregion(PD* dir, void* virtStart, void* virtEnd, void* physStart) {
-    if (!dir) dir = kernelDir;
+    if (!dir) dir = s_kernelDir;
     
     uint32_t vStart = PAGE_ALIGNDOWN(virtStart);
+    // FIX: This is technically incorrect, but it fixes a page fault (until I have a kernel heap)
     uint32_t vEnd = PAGE_ALIGNDOWN(virtEnd);
     uint32_t pStart = PAGE_ALIGNDOWN(physStart);
 
@@ -81,7 +89,7 @@ int Paging::mapregion(PD* dir, void* virtStart, void* virtEnd, void* physStart) 
 }
 
 int Paging::mappage(PD *dir, void *virt, size_t frame) {
-    if (!dir) dir = kernelDir;
+    if (!dir) dir = s_kernelDir;
 
     uint32_t pdIdx = PD_INDEX(virt), ptIdx = PT_INDEX(virt);
     
@@ -119,9 +127,38 @@ int Paging::mappage(PD *dir, void *virt, size_t frame) {
 }
 
 void Paging::switchPD(PD *dir, bool isPhysAddr) {
+    if (!dir) PANIC("Paging", "Page directory is empty");
+
     uint32_t phys = 0;
     if (isPhysAddr) phys = (uint32_t)dir;
     else phys = (uint32_t)dir - LOAD_MEMORY_ADDRESS;
+
+    s_currentDir = (PD*)phys;
     
     asm volatile("mov %0, %%cr3" : : "r"(phys));
+}
+
+#define TEST_BIT(err, shift) ((err >> shift) & 0b1) == 1
+
+int Paging::pageFaultHandler(CPUStatus* status) {
+    printf("Page fault (0x%x)\n", status->intNo);
+
+    bool present = TEST_BIT(status->errCode, 0);
+    bool write = TEST_BIT(status->errCode, 1);
+    bool user = TEST_BIT(status->errCode, 2);
+    bool instructionFetch = TEST_BIT(status->errCode, 4);
+    bool protectionKey = TEST_BIT(status->errCode, 5);
+    bool shadowStack = TEST_BIT(status->errCode, 6);
+    
+    printf("P: %d, W: %d, U: %d, I: %d, PK: %d, SS: %d\n", present, write, user, instructionFetch, protectionKey, shadowStack);
+
+    unsigned long val;
+    asm volatile ( "mov %%cr2, %0" : "=r"(val) );
+    printf("CR2: 0x%x\n", val);
+
+    return IDT::PRINT_HALT;
+}
+
+Paging::PD* Paging::currentPD() {
+    return s_currentDir;
 }

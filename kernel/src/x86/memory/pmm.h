@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define PAGE_ALIGNDOWN(addr) ((((uint32_t)(addr)) & 0xFFFFF000))
+#define PAGE_ALIGNUP(addr) ((((uint32_t)(addr)) & 0xFFFFF000) + 0x3FFF)
 
 class PMM {
 public:

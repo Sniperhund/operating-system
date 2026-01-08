@@ -1,5 +1,6 @@
 #pragma once
 
+#include "x86/idt.h"
 #include <stdint.h>
 #include <stddef.h>
 
@@ -50,10 +51,13 @@ private:
         PT* refTables[1024];
     };
 
-    static PD* kernelDir;
+    static PD* s_kernelDir;
+    static PD* s_currentDir;
+
+    static int pageFaultHandler(CPUStatus* status);
 
 public:
-    static void init();
+    static int init();
 
     static void* virtToPhys(PD* dir, void* virt);
 
@@ -61,4 +65,6 @@ public:
     static int mappage(PD* dir, void* virt, size_t frame);
     
     static void switchPD(PD *dir, bool isPhysAddr);
+
+    static PD* currentPD();
 };
