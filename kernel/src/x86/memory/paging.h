@@ -8,6 +8,8 @@
 #define PT_INDEX(virt) ((((uint32_t)virt) >> 12) & 0x3ff)
 #define PAGE_OFFSET(virt) (((uint32_t)virt) & 0xfff)
 
+#define PAGE_SIZE 4096
+
 class Paging {
 private:
     static bool enabled;

@@ -1,13 +1,13 @@
 #include "paging.h"
 #include "panic.h"
 #include "x86/idt.h"
+#include "x86/memory/heap.h"
+#include "x86/memory/pageHeap.h"
 #include "x86/memory/pmm.h"
 #include <string.h>
 #include <stdio.h>
 
 #define LOAD_MEMORY_ADDRESS 0xC0000000
-
-#define PAGE_SIZE 4096
 
 bool Paging::enabled = false;
 Paging::PD* Paging::s_kernelDir = nullptr;
@@ -32,14 +32,14 @@ int Paging::init() {
         PMM::mark(PMM::physToFrame((void*)addr));
     }
 
-    uint32_t ptFrame = PMM::findFirstFreeFrame(2);
-    PMM::mark(ptFrame);
-    PMM::mark(ptFrame + 1);
-    s_kernelDir = (PD*)(ptFrame * PAGE_SIZE + LOAD_MEMORY_ADDRESS);
+    s_kernelDir = (PD*)PageHeap::allocPage(2);
+    uint32_t frame = PMM::physToFrame((void*)((uintptr_t)s_kernelDir - LOAD_MEMORY_ADDRESS));
+    PMM::mark(frame);
+    PMM::mark(frame + 1);
     memset(s_kernelDir, 0, sizeof(PD));
 
     mapregion(nullptr, 0, (void*)0x100000, 0);
-    mapregion(nullptr, (void*)(LOAD_MEMORY_ADDRESS), (void*)(LOAD_MEMORY_ADDRESS + 0x400000), 0);
+    mapregion(nullptr, (void*)(LOAD_MEMORY_ADDRESS), (void*)(LOAD_MEMORY_ADDRESS + 0x800000), 0);
 
     switchPD(s_kernelDir, false);
 
@@ -76,7 +76,7 @@ int Paging::mapregion(PD* dir, void* virtStart, void* virtEnd, void* physStart) 
     
     uint32_t vStart = PAGE_ALIGNDOWN(virtStart);
     // FIX: This is technically incorrect, but it fixes a page fault (until I have a kernel heap)
-    uint32_t vEnd = PAGE_ALIGNDOWN(virtEnd);
+    uint32_t vEnd = PAGE_ALIGNUP(virtEnd);
     uint32_t pStart = PAGE_ALIGNDOWN(physStart);
 
     while (vStart < vEnd) {
@@ -95,9 +95,9 @@ int Paging::mappage(PD *dir, void *virt, size_t frame) {
     
     PT* table = dir->refTables[pdIdx];
     if (!table) {
-        uint32_t ptFrame = PMM::findFirstFreeFrame();
+        table = (PT*)(PD*)PageHeap::allocPage();
+        uint32_t ptFrame = PMM::physToFrame((void*)((uintptr_t)table - LOAD_MEMORY_ADDRESS));
         PMM::mark(ptFrame);
-        table = (PT*)(ptFrame * PAGE_SIZE + LOAD_MEMORY_ADDRESS);
 
         memset((void*)((uint32_t)table), 0, 4096);
 
@@ -112,7 +112,11 @@ int Paging::mappage(PD *dir, void *virt, size_t frame) {
 
     if (!table->pages[ptIdx].present) {
         if (frame) table->pages[ptIdx].frame = frame;
-        else table->pages[ptIdx].frame = PMM::findFirstFreeFrame();
+        else {
+            void* ptr = (PD*)PageHeap::allocPage();
+            uint32_t ptFrame = PMM::physToFrame((void*)((uintptr_t)table - LOAD_MEMORY_ADDRESS));
+            table->pages[ptIdx].frame = ptFrame;
+        }
 
         PMM::mark(table->pages[ptIdx].frame);
 
