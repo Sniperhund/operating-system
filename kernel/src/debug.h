@@ -3,5 +3,6 @@
 #define DO_INIT(msg, func) \
     do { \
         int status = (func); \
-        printf("%s: %s\n", msg, status == 0 ? "DONE" : "FAILED"); \
+        if (status == 0) printf("%s: DONE\n", msg); \
+        else printf("%s (%d): FAILED\n", msg, status); \
     } while (0)
