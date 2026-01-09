@@ -24,7 +24,7 @@ int PageHeap::init(size_t maxPages) {
         current = NEXT_HEADER(current);
     }
 
-    return 1;
+    return 0;
 }
 
 void* PageHeap::allocPage(size_t amount) {
