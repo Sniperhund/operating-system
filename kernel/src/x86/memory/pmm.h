@@ -17,7 +17,7 @@ public:
     static size_t findFirstFreeFrame(uint32_t amount = 1);
 
     /**
-     * Address gets aligned down (0x4050 -> 0x4000)
+     * Address gets aligned down (0x4050 -> 0x4000) before the frame is returned
      */
     static size_t physToFrame(void* phys);
 
