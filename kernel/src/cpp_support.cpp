@@ -1,21 +1,22 @@
 #include <stddef.h>
+#include "x86/memory/heap.h"
 
 extern "C" void __cxa_pure_virtual() {
-    *((int*)0xb8000)=0x07690748;
+
 }
 
 void* operator new(size_t size) {
-    return nullptr;
+    return Heap::alloc(size);
 }
 
 void* operator new[](size_t size) {
-    return nullptr;
+    return Heap::alloc(size);
 }
 
 void operator delete(void* p) {
-    return;
+    Heap::free(p);
 }
 
 void operator delete[](void* p) {
-    return;
+    Heap::free(p);
 }

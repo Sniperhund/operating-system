@@ -76,8 +76,6 @@ void* Heap::allocAligned(size_t payloadSize, size_t alignment) {
             current->next = nextBlock;
             current->used = true;
 
-            printf("Padding used for aligned block: %d\n", paddingRequired);
-
             // NOTE: This may be a problem later if a header is aligns perfectly with alignment
             //       Then it may return the header instead of the block
             return (void*)aligned;
