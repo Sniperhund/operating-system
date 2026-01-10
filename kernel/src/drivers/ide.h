@@ -6,6 +6,17 @@ class IDE {
 public:
     static int init(uint32_t bar0, uint32_t bar1, uint32_t bar2, uint32_t bar3, uint32_t bar4);
 
+    static int readSector(uint8_t drive, uint32_t lba, uint8_t numSectors, void *buf);
+    static int writeSector(uint8_t drive, uint32_t lba, uint8_t numSectors, const void *buf);
+
+    /**
+     * @return Bytes written
+     */
+    static int write(uint8_t drive, uint32_t addr, void* buffer, uint32_t count);
+    /**
+     * @return Bytes read
+     */
+    static int read(uint8_t drive, uint32_t addr, void* buffer, uint32_t count);
 private:
     struct Channel {
         uint16_t base;
@@ -38,4 +49,5 @@ private:
     static void ideReadBuffer(uint8_t channel, uint8_t reg, void* buffer, uint32_t count);
     static uint8_t idePolling(uint8_t channel, bool advancedCheck);
     static uint8_t idePrintError(uint8_t drive, uint8_t err);
+    static uint8_t ideATAAccss(uint8_t dir, uint8_t drive, uint32_t lba, uint8_t numSectors, uint16_t selector, uint32_t edi);
 };

@@ -1,6 +1,7 @@
 #include "ide.h"
 #include "x86/io.h"
 #include <stdio.h>
+#include "panic.h"
 
 // Command/Status Port Returns
 #define ATA_SR_BSY     0x80    // Busy
@@ -87,6 +88,8 @@
 // Directions
 #define      ATA_READ      0x00
 #define      ATA_WRITE     0x01
+
+#define SECTOR_SIZE 512
 
 IDE::Channel IDE::s_channels[2];
 IDE::Device IDE::s_devices[4];
@@ -185,10 +188,12 @@ int IDE::init(uint32_t bar0, uint32_t bar1, uint32_t bar2, uint32_t bar3, uint32
     // 4- Print Summary:
     for (int i = 0; i < 4; i++)
         if (s_devices[i].reserved == 1) {
-            printf(" Found %s Drive %dGB - %s\n",
-                (const char *[]){"ATA", "ATAPI"}[s_devices[i].type],         /* Type */
-                s_devices[i].size / 1024 / 1024 / 2,               /* Size */
-                s_devices[i].model);
+            printf(" Found (%d) %s Drive %dGB - %s\n",
+                i,
+                (const char *[]){"ATA", "ATAPI"}[s_devices[i].type],
+                s_devices[i].size / 1024 / 1024 / 2,
+                s_devices[i].model
+            );
     }
 
     return 0;
@@ -319,4 +324,170 @@ uint8_t IDE::idePrintError(uint8_t drive, uint8_t err) {
         s_devices[drive].model);
 
     return err;
+}
+
+#define ATA_LBA_CHS 0
+#define ATA_LBA28   1
+#define ATA_LBA48   2
+
+uint8_t IDE::ideATAAccss(uint8_t dir, uint8_t drive, uint32_t lba, uint8_t numSectors, uint16_t selector, uint32_t edi) {
+    uint8_t lbaMode, cmd;
+    bool dma;
+    uint8_t io[6];
+
+    uint32_t channel = s_devices[drive].channel;
+    bool slave = s_devices[drive].drive;
+    uint32_t bus = s_channels[channel].base;
+    // Almost all devices use 512 bytes (256 words). Though this should be updated to check
+    uint32_t wordsPerSector = SECTOR_SIZE / 2;
+    uint16_t cylinder, head, sector, err;
+
+    ideWrite(channel, ATA_REG_CONTROL, s_channels[channel].nIEN = (s_irqInvoked = 0x0) + 0x02);
+
+    if (lba >= 0x10000000) {
+        // LBA48
+        lbaMode = ATA_LBA48;
+        io[0] = (lba & 0x000000FF) >> 0;
+        io[1] = (lba & 0x0000FF00) >> 8;
+        io[2] = (lba & 0x00FF0000) >> 16;
+        io[3] = (lba & 0xFF000000) >> 24;
+        io[4] = 0;
+        io[5] = 0;
+        head = 0;
+    } else if (s_devices[drive].features & 0x200) { // Does the drive supports LBA?
+        // LBA28
+        lbaMode = ATA_LBA28;
+        io[0] = (lba & 0x00000FF) >> 0;
+        io[1] = (lba & 0x000FF00) >> 8;
+        io[2] = (lba & 0x0FF0000) >> 16;
+        io[3] = 0;
+        io[4] = 0;
+        io[5] = 0;
+        head = (lba & 0xF000000) >> 24;
+    } else {
+        // CHS
+        PANIC("IDE", "CHS is not supported");
+    }
+
+    dma = false;
+
+    while (ideRead(channel, ATA_REG_STATUS) & ATA_SR_BSY);
+
+    // Set it to LBA
+    ideWrite(channel, ATA_REG_HDDEVSEL, 0xE0 | (slave << 4) | head);
+
+    if (lbaMode == ATA_LBA48) {
+        ideWrite(channel, ATA_REG_SECCOUNT1,   0);
+        ideWrite(channel, ATA_REG_LBA3, io[3]);
+        ideWrite(channel, ATA_REG_LBA4, io[4]);
+        ideWrite(channel, ATA_REG_LBA5, io[5]);
+    }
+    ideWrite(channel, ATA_REG_SECCOUNT0,   numSectors);
+    ideWrite(channel, ATA_REG_LBA0, io[0]);
+    ideWrite(channel, ATA_REG_LBA1, io[1]);
+    ideWrite(channel, ATA_REG_LBA2, io[2]);
+
+    if (lbaMode == ATA_LBA_CHS && dma == false && dir == 0) cmd = ATA_CMD_READ_PIO;
+    if (lbaMode == ATA_LBA28 && dma == false && dir == 0) cmd = ATA_CMD_READ_PIO;   
+    if (lbaMode == ATA_LBA48 && dma == false && dir == 0) cmd = ATA_CMD_READ_PIO_EXT;   
+    if (lbaMode == ATA_LBA_CHS && dma == true && dir == 0) cmd = ATA_CMD_READ_DMA;
+    if (lbaMode == ATA_LBA28 && dma == true && dir == 0) cmd = ATA_CMD_READ_DMA;
+    if (lbaMode == ATA_LBA48 && dma == true && dir == 0) cmd = ATA_CMD_READ_DMA_EXT;
+    if (lbaMode == ATA_LBA_CHS && dma == false && dir == 1) cmd = ATA_CMD_WRITE_PIO;
+    if (lbaMode == ATA_LBA28 && dma == false && dir == 1) cmd = ATA_CMD_WRITE_PIO;
+    if (lbaMode == ATA_LBA48 && dma == false && dir == 1) cmd = ATA_CMD_WRITE_PIO_EXT;
+    if (lbaMode == ATA_LBA_CHS && dma == true && dir == 1) cmd = ATA_CMD_WRITE_DMA;
+    if (lbaMode == ATA_LBA28 && dma == true && dir == 1) cmd = ATA_CMD_WRITE_DMA;
+    if (lbaMode == ATA_LBA48 && dma == true && dir == 1) cmd = ATA_CMD_WRITE_DMA_EXT;
+    ideWrite(channel, ATA_REG_COMMAND, cmd);
+
+    if (dma) {
+        PANIC("IDE", "DMA is not supported");
+    } else {
+        if (dir == 0) {
+            // Read
+            for (int i = 0; i < numSectors; i++) {
+                if (err = idePolling(channel, 1))
+                    return err; // Polling, set error and exit if there is.
+                asm volatile("pushw %es");
+                asm volatile("mov %%ax, %%es" : : "a"(selector));
+                asm volatile("rep insw" : : "c"(wordsPerSector), "d"(bus), "D"(edi)); // Receive Data.
+                asm volatile("popw %es");
+                edi += (wordsPerSector * 2);
+            }
+        } else {
+            // Write
+            for (int i = 0; i < numSectors; i++) {
+                idePolling(channel, 0); // Polling.
+                asm volatile("pushw %ds");
+                asm volatile("mov %%ax, %%ds"::"a"(selector));
+                asm volatile("rep outsw"::"c"(wordsPerSector), "d"(bus), "S"(edi)); // Send Data
+                asm volatile("popw %ds");
+                edi += (wordsPerSector * 2);
+            }
+            ideWrite(channel, ATA_REG_COMMAND, (char []) {
+                (char)ATA_CMD_CACHE_FLUSH,
+                (char)ATA_CMD_CACHE_FLUSH,
+                (char)ATA_CMD_CACHE_FLUSH_EXT}[lbaMode]);
+            idePolling(channel, 0); // Polling.
+        }
+    }
+
+    return 0;
+}
+
+int IDE::writeSector(uint8_t drive, uint32_t lba, uint8_t count, const void *buf) {
+    return ideATAAccss(1, drive, lba, count, 0x10, (uint32_t)buf);
+}
+
+int IDE::readSector(uint8_t drive, uint32_t lba, uint8_t count, void *buf) {
+    return ideATAAccss(0, drive, lba, count, 0x10, (uint32_t)buf);
+}
+
+int IDE::write(uint8_t drive, uint32_t addr, void *buffer, uint32_t count) {
+    uint8_t* byteBuffer = (uint8_t*)buffer;
+    uint32_t startSector = addr / SECTOR_SIZE;
+    uint32_t endSector = (addr + count - 1) / SECTOR_SIZE;
+
+    uint8_t sectorBuffer[512];
+    uint32_t bytesWritten = 0;
+
+    for (uint32_t i = startSector; i <= endSector; i++) {
+        IDE::readSector(drive, i, 1, sectorBuffer);
+
+        uint32_t sectorStart = (i == startSector) ? (addr % SECTOR_SIZE) : 0;
+        uint32_t sectorEnd = (i == endSector) ? ((addr + count - 1) % SECTOR_SIZE) : (SECTOR_SIZE - 1);
+
+        for (uint32_t j = sectorStart; j <= sectorEnd; ++j) {
+            sectorBuffer[j] = *byteBuffer++;
+            bytesWritten++;
+        }
+
+        IDE::writeSector(drive, i, 1, sectorBuffer);
+    }
+
+    return bytesWritten;
+}
+
+int IDE::read(uint8_t drive, uint32_t addr, void *buffer, uint32_t count) {
+    uint8_t* byteBuffer = (uint8_t*)buffer;
+    uint32_t startSector = addr / SECTOR_SIZE;
+    uint32_t endSector = (addr + count - 1) / SECTOR_SIZE;
+
+    uint8_t sectorBuffer[SECTOR_SIZE];
+    uint32_t bytesCopied = 0;
+
+    for (uint32_t i = startSector; i <= endSector; i++) {
+        IDE::readSector(drive, i, 1, sectorBuffer);
+
+        uint32_t sectorStart = (i == startSector) ? (addr % SECTOR_SIZE) : 0;
+        uint32_t sectorEnd = (i == endSector) ? ((addr + count - 1) % SECTOR_SIZE) : (SECTOR_SIZE - 1);
+
+        for (uint32_t j = sectorStart; j <= sectorEnd; ++j) {
+            *byteBuffer++ = sectorBuffer[j];
+            bytesCopied++;
+        }
+    }
+
+    return bytesCopied;
 }
