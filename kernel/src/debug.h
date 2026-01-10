@@ -6,3 +6,5 @@
         if (status == 0) printf("%s: DONE\n", msg); \
         else printf("%s (%d): FAILED\n", msg, status); \
     } while (0)
+
+#define BOCHS_BREAK asm volatile ("xchgw %bx, %bx");

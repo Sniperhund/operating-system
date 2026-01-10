@@ -4,3 +4,7 @@ compile_commands.json
 kernel.iso
 .cache/
 serial.log
+
+bochs.log
+bx_enh_dbg.ini
+kernel.sym

@@ -1,0 +1,31 @@
+# Bochs configuration for your kernel project
+
+# Memory
+megs: 512
+
+# Boot
+boot: cdrom
+
+# ISO image
+ata0-master: type=cdrom, path="kernel.iso", status=inserted
+
+# CPU type
+cpu: count=1, ips=1000000, reset_on_triple_fault=0
+
+# Debugging
+log: bochs.log
+panic: action=ask
+error: action=report
+info: action=report
+debug: action=ignore, pci=report
+
+# Enable Bochs built-in debugger
+magic_break: enabled=1
+
+# Serial port redirection
+com1: enabled=1, mode=file, dev=serial.log
+
+# Timing
+clock: sync=realtime, time0=0
+
+debug_symbols: file="kernel.sym"
