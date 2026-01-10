@@ -17,8 +17,8 @@ void* memcpy(void* dest, const void* src, size_t count) {
 
     if (destPtr == srcPtr || count == 0) return dest;
 
-    for (size_t i = 0; i < count; i++) {
-        destPtr[i] = srcPtr[i];
+    while (count--) {
+        *destPtr++ = *srcPtr++;
     }
 
     return dest;
@@ -32,8 +32,8 @@ void* memmove(void* dest, const void* src, size_t count) {
 
     if (destPtr < srcPtr || destPtr >= srcPtr + count) {
         // No overlap, copy forwards
-        for (size_t i = 0; i < count; i++) {
-            destPtr[i] = srcPtr[i];
+        while (count--) {
+            *destPtr++ = *srcPtr++;
         }
     } else {
         // Overlap, copy backwards
@@ -46,7 +46,15 @@ void* memmove(void* dest, const void* src, size_t count) {
 }
 
 int memcmp(const void* lhs, const void* rhs, size_t count) {
+    const uint8_t *a = (const uint8_t *)lhs;
+    const uint8_t *b = (const uint8_t *)rhs;
 
+    for (size_t i = 0; i < count; i++) {
+        if (a[i] != b[i]) {
+            return (int)a[i] - (int)b[i];
+        }
+    }
+    return 0;
 }
 
 
@@ -126,6 +134,56 @@ char* strrev(char* str) {
     }
 
     return str;
+}
+
+char* strcpy(char* dest, const char* src) {
+    int len = strlen(src);
+
+    memmove(dest, src, len);
+
+    return dest;
+}
+
+int strcmp(const char* lhs, const char* rhs) {
+    int lhsLen = strlen(lhs);
+    int rhsLen = strlen(rhs);
+
+    int len = lhsLen >= rhsLen ? lhsLen : rhsLen;
+
+    return strncmp(lhs, rhs, len);
+}
+
+int strncmp(const char* lhs, const char* rhs, size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        if (lhs[i] != rhs[i]) {
+            return (int)lhs[i] - (int)rhs[i];
+        }
+    }
+
+    return 0;
+}
+
+int atoi(const char *str) {
+    int num = 0;
+    bool negative = false;
+    
+    while (*str != '\0') {
+        if (*str == '-' && ((*(str + 1) >= '0') && (*(str + 1) <= '9'))) {
+            negative = true;
+            str++;
+        }
+
+        if (!((*str >= '0') && (*str <= '9'))) {
+            str++;
+            continue;
+        }
+
+        num = num * 10;
+        num = num + (*str - 48);
+        str++;
+    }
+
+    return num * (negative ? -1 : 1);
 }
 
 char toupper(char c) {
