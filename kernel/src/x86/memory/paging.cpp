@@ -104,7 +104,7 @@ int Paging::mappage(PD *dir, void *virt, size_t frame) {
         dir->tables[pdIdx].frame = ptFrame;
         dir->tables[pdIdx].present = 1;
         dir->tables[pdIdx].rw = 1;
-        dir->tables[pdIdx].user = 0;
+        dir->tables[pdIdx].user = 1;
         dir->tables[pdIdx].page_size = 0;
 
         dir->refTables[pdIdx] = table;
@@ -122,7 +122,7 @@ int Paging::mappage(PD *dir, void *virt, size_t frame) {
 
         table->pages[ptIdx].present = 1;
         table->pages[ptIdx].rw = 1;
-        table->pages[ptIdx].user = 0;
+        table->pages[ptIdx].user = 1;
     }
 
     asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
