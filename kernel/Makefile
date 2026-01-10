@@ -58,7 +58,7 @@ $(DISK_IMAGE):
 	qemu-img create -f raw $(DISK_IMAGE) $(DISK_SIZE)
 
 run: $(KERNEL_ELF_OUTPUT) $(DISK_IMAGE)
-	qemu-system-i386 -cdrom kernel.iso -serial file:serial.log -drive format=raw,file=$(DISK_IMAGE)
+	qemu-system-i386 -cdrom kernel.iso -serial file:serial.log -drive format=raw,file=$(DISK_IMAGE) -boot order=dc
 
 run-debug: $(KERNEL_ELF_OUTPUT) $(DISK_IMAGE)
-	qemu-system-i386 -s -S -cdrom kernel.iso -serial file:serial.log -drive format=raw,file=$(DISK_IMAGE)
+	qemu-system-i386 -s -S -cdrom kernel.iso -serial file:serial.log -drive format=raw,file=$(DISK_IMAGE) -boot order=dc
