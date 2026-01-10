@@ -8,3 +8,4 @@ serial.log
 bochs.log
 bx_enh_dbg.ini
 kernel.sym
+disk.img

@@ -51,8 +51,14 @@ clean:
 
 build: $(KERNEL_ELF_OUTPUT)
 
-run: $(KERNEL_ELF_OUTPUT)
-	qemu-system-i386 -cdrom kernel.iso -serial file:serial.log
+DISK_IMAGE = disk.img
+DISK_SIZE = 2G
 
-run-debug: $(KERNEL_ELF_OUTPUT)
-	qemu-system-i386 -s -S -cdrom kernel.iso -serial file:serial.log
+$(DISK_IMAGE):
+	qemu-img create -f qcow2 $(DISK_IMAGE) $(DISK_SIZE)
+
+run: $(KERNEL_ELF_OUTPUT) $(DISK_IMAGE)
+	qemu-system-i386 -cdrom kernel.iso -serial file:serial.log -drive format=qcow2,file=$(DISK_IMAGE)
+
+run-debug: $(KERNEL_ELF_OUTPUT) $(DISK_IMAGE)
+	qemu-system-i386 -s -S -cdrom kernel.iso -serial file:serial.log -drive format=qcow2,file=$(DISK_IMAGE)

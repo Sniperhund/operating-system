@@ -6,6 +6,7 @@
 #include "x86/memory/paging.h"
 #include "x86/pic.h"
 #include "drivers/keyboard.h"
+#include "drivers/ide.h"
 #include <stdio.h>
 #include "debug.h"
 
@@ -28,8 +29,5 @@ extern "C" void kernel_main() {
     DO_INIT("Initialising Heap", Heap::init(kernel_end, 0xF0000));
     DO_INIT("Initialising PageHeap", PageHeap::init(16));
     DO_INIT("Initialising Paging", Paging::init());
-
-    extern void jump_usermode();
-
-    jump_usermode();
+    DO_INIT("Initialising IDE", IDE::init(0x1F0, 0x3F6, 0x170, 0x376, 0x000));
 }
