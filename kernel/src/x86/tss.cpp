@@ -24,3 +24,7 @@ void TSS::writeTSS(uint32_t index) {
     s_tss.ss0 = KERNEL_DATA_SELECTOR;
     asm volatile("mov %%esp, %0" : "=r"(s_tss.esp0) : :);
 }
+
+void TSS::setKernelESP() {
+    asm volatile("mov %%esp, %0" : "=r"(s_tss.esp0) : :);
+}
