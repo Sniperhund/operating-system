@@ -1,8 +1,12 @@
 #include "gdt.h"
+#include "debug.h"
 #include "panic.h"
+#include "x86/tss.h"
 
 GDT::Descriptor GDT::s_gdt[GDT_SIZE];
 GDT::GDTR GDT::s_gdtr;
+
+uint8_t GDT::s_tssIndex = 0;
 
 int GDT::init(bool defaultDesc) {
     if (defaultDesc) defaultDescriptors();
@@ -24,10 +28,17 @@ int GDT::init(bool defaultDesc) {
         : : : "ax", "memory"
     );
 
+    if (s_tssIndex != 0) {
+        uint16_t tssSelector = (5 << 3) | 0; // Ring 0
+        asm volatile("ltr %0" : : "r"(tssSelector));
+    }
+
     return 0;
 }
 
 void GDT::defaultDescriptors() {
+    BOCHS_BREAK;
+
     // Null descriptor
     setDescriptor(0, { 0, 0, 0, 0, 0, 0 });
 
@@ -46,10 +57,33 @@ void GDT::defaultDescriptors() {
         0xFFFF,
         0,
         0,
-        ACCESS_PRESENT | ACCESS_DPL(0) | ACCESS_DESCRIPTOR | ACCESS_RW | ACCESS_DATA,
+        ACCESS_PRESENT | ACCESS_DPL(0) | ACCESS_DATA | ACCESS_RW | ACCESS_DESCRIPTOR,
         (FLAG_GRANULARITY | FLAG_SIZE_32) | 0x0F,
         0
     });
+
+    // User code segment
+    setDescriptor(3, {
+        0xFFFF,
+        0,
+        0,
+        ACCESS_PRESENT | ACCESS_DPL(3) | ACCESS_CODE | ACCESS_RW | ACCESS_DESCRIPTOR,
+        (FLAG_GRANULARITY | FLAG_SIZE_32) | 0x0F,
+        0
+    });
+
+    // User data segment
+    setDescriptor(4, {
+        0xFFFF,
+        0,
+        0,
+        ACCESS_PRESENT | ACCESS_DPL(3) | ACCESS_DATA | ACCESS_RW | ACCESS_DESCRIPTOR,
+        (FLAG_GRANULARITY | FLAG_SIZE_32) | 0x0F,
+        0
+    });
+
+    s_tssIndex = 5;
+    TSS::writeTSS(s_tssIndex);
 }
 
 void GDT::setDescriptor(uint32_t index, const Descriptor& desc) {

@@ -1,9 +1,6 @@
 #include "drivers/text.h"
-#include "panic.h"
 #include "x86/gdt.h"
 #include "x86/idt.h"
-#include "x86/io.h"
-#include "x86/irq.h"
 #include "x86/memory/heap.h"
 #include "x86/memory/pageHeap.h"
 #include "x86/memory/paging.h"
@@ -31,4 +28,8 @@ extern "C" void kernel_main() {
     DO_INIT("Initialising Heap", Heap::init(kernel_end, 0xF0000));
     DO_INIT("Initialising PageHeap", PageHeap::init(16));
     DO_INIT("Initialising Paging", Paging::init());
+
+    extern void jump_usermode();
+
+    jump_usermode();
 }

@@ -64,3 +64,35 @@ align 4
 stack_start:
     resb 1024 * 16 ; 16 KiB
 stack_end:
+
+user_stack_start:
+    resb 1024 ; 1 KiB
+user_stack_end:
+
+section .text
+global jump_usermode
+jump_usermode:
+    cli         ; Disable interrupts
+
+    mov ax, 0x23
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    ; SS is handled by iret
+
+    mov eax, esp
+    push 0x23   ; Usermode SS
+    push eax
+    pushf       ; Push low 16 bits of eflags
+    pop eax
+    and eax, ~(1 << 14)   ; clear NT
+    or  eax, (1 << 9)    ; set IF
+    push eax
+    push 0x1b
+    push test_user_function
+    iret
+
+test_user_function:
+    mov eax, 23
+    hlt
