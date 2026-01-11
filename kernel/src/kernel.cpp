@@ -33,19 +33,13 @@ extern "C" void kernel_main() {
     DO_INIT("Initialising PageHeap", PageHeap::init(16));
     DO_INIT("Initialising Paging", Paging::init());
     DO_INIT("Initialising IDE", IDE::init(0x1F0, 0x3F6, 0x170, 0x376, 0x000));
+    VFS::init();
 
-    FAT32 fat(0);
+    VFS::mount(&FAT32VFS::FAT32Ops, 0, "/");
 
-    FAT32::inode file;
-    uint32_t cluster;
+    inode* file;
 
-    if (fat.resolvePath("/test.txt", file, cluster)) {
-        printf("Found file. Size: %u, startCluster: %u\n", file.size, cluster);
+    VFS::resolve("/test.txt", &file);
 
-        char* buffer = (char*)Heap::alloc(file.size);
-
-        fat.readFile(file, buffer, 0, file.size);
-
-        printf("Buffer: %s", buffer);
-    }
+    printf("%d", file->size);
 }
