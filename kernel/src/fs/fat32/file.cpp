@@ -1,7 +1,7 @@
 #include "fs/fat32.h"
 #include <string.h>
 
-size_t FAT32::readFile(const inode& entry, void* buffer, size_t offset, size_t count) {
+size_t FAT32::readFile(const file& entry, void* buffer, size_t offset, size_t count) {
     if (offset >= entry.size || !buffer)
         return 0;
 

@@ -12,8 +12,8 @@ void FAT32::walkRootDir() {
         for (uint8_t s = 0; s < bootSector->sectorsPerCluster; s++) {
             IDE::readSector(drive, lba + s, 1, buffer);
 
-            for (int i = 0; i < 512; i += sizeof(inode)) {
-                inode* entry = (inode*)(buffer + i);
+            for (int i = 0; i < 512; i += sizeof(file)) {
+                file* entry = (file*)(buffer + i);
 
                 if (entry->name[0] == 0x0) return;
                 if ((uint8_t)entry->name[0] == 0xE5) continue;

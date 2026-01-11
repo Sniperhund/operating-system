@@ -1,6 +1,7 @@
 #pragma once
 
 #include "drivers/ide.h"
+#include "fs/vfs.h"
 #include "x86/memory/heap.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -11,7 +12,7 @@ public:
 
     void walkRootDir();
 
-    struct inode {
+    struct file {
         char name[8];
         char ext[3];
         uint8_t attributes;
@@ -27,23 +28,27 @@ public:
         uint32_t size; // In bytes
     } __attribute__((packed));
 
-    bool resolvePath(const char* path, inode& outEntry, uint32_t& outCluster);
+    bool resolvePath(const char* path, file& outEntry, uint32_t& outCluster);
 
     /**
      * Read a file from a entry
      *
      * @return Bytes read
      */
-    size_t readFile(const inode& entry, void* buffer, size_t offset, size_t count);
+    size_t readFile(const file& entry, void* buffer, size_t offset, size_t count);
     /**
      * Write to a file from a buffer
      * Permissions are not yet supported.
      * 
      * @return Bytes written
      */
-    size_t writeFile(const char* path, void* buffer, inode& out, size_t offset, size_t count);
+    size_t writeFile(const char* path, void* buffer, file& out, size_t offset, size_t count);
+
+    uint32_t getRootCluster() { return rootCluster; }
 
 private:
+    friend class FAT32VFS;
+
     struct BPB {
         uint8_t reserved0[3];
         char oem[8];
@@ -121,5 +126,20 @@ private:
 
     void make83Name(const char* str, char out[11]);
 
-    bool findInDirectory(uint32_t dirCluster, const char* name, inode& out);
+    bool findInDirectory(uint32_t dirCluster, const char* name, file& out);
+};
+
+class FAT32VFS {
+public:
+    struct fat32Node {
+        FAT32* fs;
+        uint32_t cluster;
+        bool isDir;
+    };
+
+    static int mount(void* device, inode **outRoot);
+    static int lookup(inode* dir, const char* name, inode** out);
+    static int read(inode* node, void* buffer, size_t offset, size_t size);
+
+    static FSOps FAT32Ops;
 };

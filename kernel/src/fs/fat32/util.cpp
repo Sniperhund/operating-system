@@ -15,7 +15,7 @@ void FAT32::make83Name(const char* str, char out[11]) {
     }
 }
 
-bool FAT32::findInDirectory(uint32_t dirCluster, const char* name, inode& out) {
+bool FAT32::findInDirectory(uint32_t dirCluster, const char* name, file& out) {
     char target[11];
     make83Name(name, target);
 
@@ -28,8 +28,8 @@ bool FAT32::findInDirectory(uint32_t dirCluster, const char* name, inode& out) {
         for (uint8_t s = 0; s < bootSector->sectorsPerCluster; s++) {
             IDE::readSector(drive, lba + s, 1, buffer);
 
-            for (int i = 0; i < 512; i += sizeof(inode)) {
-                inode* entry = (inode*)(buffer + i);
+            for (int i = 0; i < 512; i += sizeof(file)) {
+                file* entry = (file*)(buffer + i);
 
                 if (entry->name[0] == 0x00) return false;
                 if ((uint8_t)entry->name[0] == 0xE8) continue; // Deleted
@@ -49,7 +49,7 @@ bool FAT32::findInDirectory(uint32_t dirCluster, const char* name, inode& out) {
     return false;
 }
 
-bool FAT32::resolvePath(const char* path, inode& outEntry, uint32_t& outCluster) {
+bool FAT32::resolvePath(const char* path, file& outEntry, uint32_t& outCluster) {
     int len = strlen(path);
     char* localPath = (char*)Heap::alloc(len);
     strcpy(localPath, path);
@@ -57,7 +57,7 @@ bool FAT32::resolvePath(const char* path, inode& outEntry, uint32_t& outCluster)
     char* token = strtok(localPath, "/");
 
     uint32_t currentCluster = rootCluster;
-    inode entry;
+    file entry;
 
     for (int i = 0; i < 16; i++) {
         if (!findInDirectory(currentCluster, token, entry))
