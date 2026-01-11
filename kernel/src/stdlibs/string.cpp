@@ -144,6 +144,12 @@ char* strcpy(char* dest, const char* src) {
     return dest;
 }
 
+char* strncpy(char* dest, const char* src, size_t count) {
+    memmove(dest, src, count);
+
+    return dest;
+}
+
 int strcmp(const char* lhs, const char* rhs) {
     int lhsLen = strlen(lhs);
     int rhsLen = strlen(rhs);
@@ -161,6 +167,36 @@ int strncmp(const char* lhs, const char* rhs, size_t count) {
     }
 
     return 0;
+}
+
+char* strtok(char* str, const char* delimiters) {
+    static char* save;
+    
+    if (str) save = str;
+
+    if (!save) return nullptr;
+
+    while (*save && strchr(delimiters, *save)) save++;
+
+    if (!*save) return nullptr;
+
+    char* token = save;
+
+    while (*save && !strchr(delimiters, *save)) save++;
+
+    if (*save) {
+        *save = 0;
+        save++;
+    }
+
+    return token;
+}
+
+char* strchr(const char* str, char ch) {
+    for (int i = 0; str[i] != 0; i++) {
+        if (str[i] == ch) return (char*)(str + i);
+    }
+    return nullptr;
 }
 
 int atoi(const char *str) {

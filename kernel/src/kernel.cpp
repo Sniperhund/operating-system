@@ -1,3 +1,4 @@
+#include "drivers/fat32.h"
 #include "drivers/text.h"
 #include "x86/gdt.h"
 #include "x86/idt.h"
@@ -33,20 +34,18 @@ extern "C" void kernel_main() {
     DO_INIT("Initialising Paging", Paging::init());
     DO_INIT("Initialising IDE", IDE::init(0x1F0, 0x3F6, 0x170, 0x376, 0x000));
 
-    FILE* file = fopen("/drive/0", "");
+    FAT32 fat(0);
 
-    printf("0x%p, %d\n", file);
+    FAT32::inode file;
+    uint32_t cluster;
 
-    uint32_t* buffer = (uint32_t*)Heap::alloc(4);
-    memset(buffer, 0xFF, 4);
+    if (fat.resolvePath("/test.txt", file, cluster)) {
+        printf("Found file. Size: %u, startCluster: %u\n", file.size, cluster);
 
-    fwrite(file, buffer, 4);
+        char* buffer = (char*)Heap::alloc(file.size);
 
-    printf("%u - ", *buffer);
+        fat.readFile(file, buffer, 0, file.size);
 
-    memset(buffer, 0, 4);
-
-    fread(file, buffer, 4, file->offset - 4);
-
-    printf("%u", *buffer);
+        printf("Buffer: %s", buffer);
+    }
 }
