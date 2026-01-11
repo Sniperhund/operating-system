@@ -1,4 +1,4 @@
-#include "drivers/fat32.h"
+#include "fs/fat32.h"
 #include "drivers/text.h"
 #include "x86/gdt.h"
 #include "x86/idt.h"
