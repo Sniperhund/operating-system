@@ -27,7 +27,7 @@ int FAT32VFS::lookup(inode* dir, const char* name, inode** out) {
 
     FAT32::file entry;
     if (!fs->findInDirectory(node->cluster, name, entry))
-        return -1;
+        return 1;
 
     fat32Node* child = new fat32Node;
     child->fs = fs;
@@ -67,5 +67,6 @@ FSOps FAT32VFS::FAT32Ops = {
     .write      = nullptr,
     .readdir    = nullptr,
     .destroy    = destroy,
+    .deleteE    = nullptr,
     .create     = nullptr,
 };

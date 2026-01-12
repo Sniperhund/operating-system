@@ -115,7 +115,6 @@ inode* VFS::open(const char *path, uint32_t flags) {
     newNode->flags = flags;
 
     return newNode;
-    
 }
 
 void VFS::close(inode *node) {
