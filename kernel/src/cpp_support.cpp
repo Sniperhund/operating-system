@@ -20,3 +20,7 @@ void operator delete(void* p) {
 void operator delete[](void* p) {
     Heap::free(p);
 }
+
+void operator delete(void* p, unsigned long size) {
+    Heap::free(p);
+}
