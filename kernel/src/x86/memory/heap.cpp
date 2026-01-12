@@ -17,8 +17,8 @@ int Heap::init(void *start, size_t size) {
     return 0;
 }
 
-#define GET_HEADER(ptr) ((Heap::Header*)((ptr) - sizeof(Heap::Header)))
-#define GET_BLOCK(ptr) ((void*)((ptr) + sizeof(Heap::Header)))
+#define GET_HEADER(ptr) ((Heap::Header*)((uintptr_t)(ptr) - sizeof(Heap::Header)))
+#define GET_BLOCK(ptr) ((void*)((uintptr_t)(ptr) + sizeof(Heap::Header)))
 #define GET_FULL_BLOCK_SIZE(size) (size + sizeof(Heap::Header))
 
 void* Heap::alloc(size_t payloadSize) {
@@ -27,7 +27,7 @@ void* Heap::alloc(size_t payloadSize) {
 
     while (current && (uintptr_t)current < s_end) {
         if (!current->used && current->size >= payloadSize + MIN_BLOCK_SIZE) {
-            Header* nextBlock = (Header*)((uintptr_t)GET_BLOCK(current) + GET_FULL_BLOCK_SIZE(payloadSize));
+            Header *nextBlock = (Header*)((uintptr_t)current + sizeof(Header) + payloadSize);
 
             nextBlock->size = current->size - payloadSize - sizeof(Header);
             nextBlock->next = current->next;
@@ -66,7 +66,7 @@ void* Heap::allocAligned(size_t payloadSize, size_t alignment) {
         size_t paddedPayloadSize = paddingRequired + payloadSize;
 
         if (!current->used && current->size >= paddedPayloadSize + MIN_BLOCK_SIZE) {
-            Header* nextBlock = (Header*)((uintptr_t)GET_BLOCK(current) + GET_FULL_BLOCK_SIZE(paddedPayloadSize));
+            Header* nextBlock = (Header*)((uintptr_t)current + sizeof(Header) + paddedPayloadSize);
 
             nextBlock->size = current->size - paddedPayloadSize - sizeof(Header);
             nextBlock->next = current->next;
@@ -91,7 +91,8 @@ void* Heap::allocAligned(size_t payloadSize, size_t alignment) {
 }
 
 void Heap::free(void *ptr) {
-
+    Header* header = GET_HEADER(ptr);
+    printf("Free was called for %u bytes\n", header->size);
 }
 
 void* Heap::realloc(void *ptr, size_t payloadSize) {
