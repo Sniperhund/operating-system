@@ -140,6 +140,7 @@ public:
     static int mount(void* device, inode **outRoot);
     static int lookup(inode* dir, const char* name, inode** out);
     static int read(inode* node, void* buffer, size_t offset, size_t size);
+    static void destroy(inode* node);
 
     static FSOps FAT32Ops;
 };

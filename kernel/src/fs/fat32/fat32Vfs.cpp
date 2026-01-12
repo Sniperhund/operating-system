@@ -55,10 +55,16 @@ int FAT32VFS::read(inode* node, void* buffer, size_t offset, size_t size) {
     return fatNode->fs->readFile(fake, buffer, offset, size);
 }
 
+void FAT32VFS::destroy(inode *node) {
+    fat32Node* fatNode = (fat32Node*)node->fsData;
+    delete fatNode;
+}
+
 FSOps FAT32VFS::FAT32Ops = {
     .mount      = mount,
     .lookup     = lookup,
     .read       = read,
     .write      = nullptr,
     .readdir    = nullptr,
+    .destroy    = destroy,
 };

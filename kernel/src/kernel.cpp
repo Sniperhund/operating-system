@@ -37,9 +37,14 @@ extern "C" void kernel_main() {
 
     VFS::mount(&FAT32VFS::FAT32Ops, 0, "/");
 
-    inode* file;
-
-    VFS::resolve("/test.txt", &file);
+    inode* file = VFS::open("/test.txt");
 
     printf("%d", file->size);
+
+    char buffer[10] = {0};
+    VFS::read(file, buffer, 0, file->size);
+
+    printf("%s", buffer);
+
+    VFS::close(file);
 }

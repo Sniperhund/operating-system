@@ -11,6 +11,7 @@ struct FSOps {
     int (*read)(inode* node, void* buffer, size_t offset, size_t size);
     int (*write)(inode* node, const void* buffer, size_t offset, size_t size);
     int (*readdir)(inode* dir, size_t index, inode** out);
+    void (*destroy)(inode*);
 };
 
 struct inode {
@@ -29,23 +30,14 @@ struct inode {
     void* fsData;
 };
 
-struct file {
-    // Which mode: READ, WRITE, READ+WRITE, etc
-    uint8_t mode;
-    uint32_t offset;
-    inode* node;
-
-    // If bufferSize == 0, the buffer is not used
-    uint32_t bufferSize;
-    uint32_t bufferPos;
-    uint8_t* buffer;
-};
-
 class VFS {
 public:
     static int init();
     static int mount(FSOps* fs, uint8_t drive, const char* path);
     static int resolve(const char* path, inode** out);
+    static size_t read(inode* node, void* buffer, size_t offset, size_t size);
+    static inode* open(const char* path);
+    static void close(inode* node);
 
 private:
     struct Mount {
