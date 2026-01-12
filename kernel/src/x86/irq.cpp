@@ -8,6 +8,8 @@ int IRQ::registerIRQ(uint8_t irq, irqHandlerFunc func) {
     if (!func) return 1;
     
     s_irqRoutines[irq] = func;
+
+    return 0;
 }
 
 void IRQ::irqHandler(CPUStatus* status) {

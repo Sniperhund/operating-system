@@ -62,6 +62,8 @@ TEMP_PD:
 section .bss
 align 4
 stack_start:
+    ; FIX: I don't know how it hasn't crashed from this small stack...
+    ;      If it ain't broke don't fix it
     resb 1024 * 16 ; 16 KiB
 stack_end:
 
@@ -69,6 +71,8 @@ user_stack_start:
     resb 1024 ; 1 KiB
 user_stack_end:
 
+; For some stupid reason this code is put at the very front of the kernel code, so it crashes before even hitting start
+; For now it's gonna live here...
 section .text
 global jump_usermode
 jump_usermode:
