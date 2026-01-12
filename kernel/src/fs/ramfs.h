@@ -16,15 +16,16 @@ private:
     static int write(inode* node, const void* buffer, size_t offset, size_t size);
     static int readdir(inode* dir, size_t index, inode** out);
     static void destroy(inode* node);
+    static void deleteE(inode* node);
     static int create(inode* dir, const char* name, inode** out, bool isDir);
 
-    struct RamFSNode {
+    struct ramFSNode {
         inode* node;
         char* name;
         bool isDir;
         uint16_t childrenCount;
-        // This functions as a heap allocated array, index is children + (childrenCount * sizeof(RamFSNode))
-        RamFSNode* children;
+        // Contains a pointer to some heap allocated memory containing a dir table
+        ramFSNode* children;
         // Only used for files
         uint8_t* data;
         size_t size;
