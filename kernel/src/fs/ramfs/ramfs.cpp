@@ -60,11 +60,18 @@ int RamFS::lookup(inode* dir, const char* name, inode** out) {
         }
     }
 
+<<<<<<< HEAD
     return E_NOENT;
 }
 
 int RamFS::read(inode* node, void* buffer, size_t offset, size_t size) {
     // TODO: Set a error bit somewhere
+=======
+    return 1;
+}
+
+int RamFS::read(inode* node, void* buffer, size_t offset, size_t size) {
+>>>>>>> 3149168ee81a07d25c3a140852298f68df61e568
     if (!node) return 0;
 
     ramFSNode* fsNode = (ramFSNode*)node->fsData;
@@ -80,7 +87,10 @@ int RamFS::read(inode* node, void* buffer, size_t offset, size_t size) {
 }
 
 int RamFS::write(inode* node, const void* buffer, size_t offset, size_t size) {
+<<<<<<< HEAD
     // TODO: Set a error bit somewhere
+=======
+>>>>>>> 3149168ee81a07d25c3a140852298f68df61e568
     if (!node) return 0;
 
     ramFSNode* fsNode = (ramFSNode*)node->fsData;
@@ -104,12 +114,19 @@ int RamFS::write(inode* node, const void* buffer, size_t offset, size_t size) {
 }
 
 int RamFS::readdir(inode* dir, size_t index, inode** out) {
+<<<<<<< HEAD
     if (!dir) return E_INVAL;
 
     ramFSNode* node = (ramFSNode*)dir->fsData;
 
     if (index >= node->childrenCount) return E_NOENT;
 
+=======
+    if (!dir) return 1;
+
+    ramFSNode* node = (ramFSNode*)dir->fsData;
+
+>>>>>>> 3149168ee81a07d25c3a140852298f68df61e568
     ramFSNode* child = node->children + index;
 
     if (child->node) {
@@ -148,7 +165,11 @@ int RamFS::create(inode* dir, const char* name, inode** out, bool isDir) {
 
     for (int i = 0; i < node->childrenCount; i++) {
         ramFSNode* child = node->children + i;
+<<<<<<< HEAD
         if (strcmp(name, child->name) == 0) return E_NOTUNIQ;
+=======
+        if (strcmp(name, child->name) == 0) return 1;
+>>>>>>> 3149168ee81a07d25c3a140852298f68df61e568
     }
 
     ramFSNode* newNode = nullptr;
