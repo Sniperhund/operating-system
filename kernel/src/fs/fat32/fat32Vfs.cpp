@@ -67,4 +67,5 @@ FSOps FAT32VFS::FAT32Ops = {
     .write      = nullptr,
     .readdir    = nullptr,
     .destroy    = destroy,
+    .create     = nullptr,
 };

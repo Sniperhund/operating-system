@@ -1,4 +1,5 @@
 #include "string.h"
+#include "x86/memory/heap.h"
 
 #include <stdint.h>
 
@@ -197,6 +198,22 @@ char* strchr(const char* str, char ch) {
         if (str[i] == ch) return (char*)(str + i);
     }
     return nullptr;
+}
+
+char* strrchr(const char* str, char ch) {
+    int len = strlen(str);
+    for (int i = len; i > 0; i--) {
+        if (str[i] == ch) return (char*)(str + i);
+    }
+    return nullptr;
+}
+
+char* strdup(const char* src) {
+    int len = strlen(src);
+    char* dup = (char*)Heap::alloc(len);
+    strcpy(dup, src);
+
+    return dup;
 }
 
 int atoi(const char *str) {

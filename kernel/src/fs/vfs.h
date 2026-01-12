@@ -12,6 +12,7 @@ struct FSOps {
     int (*write)(inode* node, const void* buffer, size_t offset, size_t size);
     int (*readdir)(inode* dir, size_t index, inode** out);
     void (*destroy)(inode*);
+    int (*create)(inode* dir, const char* name, inode** out, bool isDir);
 };
 
 struct inode {
@@ -25,10 +26,16 @@ struct inode {
     Type type;
     uint32_t size;
     uint32_t refCount;
+    uint32_t flags;
 
     FSOps* fs;
     void* fsData;
 };
+
+#define O_READ      (1 << 0)
+#define O_WRITE     (1 << 1)
+#define O_CREATE    (1 << 2)
+#define O_APPEND    (1 << 3)
 
 class VFS {
 public:
@@ -36,7 +43,8 @@ public:
     static int mount(FSOps* fs, uint8_t drive, const char* path);
     static int resolve(const char* path, inode** out);
     static size_t read(inode* node, void* buffer, size_t offset, size_t size);
-    static inode* open(const char* path);
+    static size_t write(inode* node, void* buffer, size_t offset, size_t size);
+    static inode* open(const char* path, uint32_t flags = 0);
     static void close(inode* node);
 
 private:
@@ -48,4 +56,6 @@ private:
 
     static Mount mounts[4];
     static size_t mountCount;
+
+    static void splitPath(const char* path, char* parent, char* name);
 };

@@ -19,6 +19,9 @@ int strncmp(const char* lhs, const char* rhs, size_t count);
 
 char* strtok(char* str, const char* delimiters);
 char* strchr(const char* str, char ch);
+char* strrchr(const char* str, char ch);
+
+char* strdup(const char* src);
 
 int atoi(const char* str);
 

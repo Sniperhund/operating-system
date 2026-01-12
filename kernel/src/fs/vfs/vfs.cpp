@@ -1,4 +1,5 @@
 #include "fs/vfs.h"
+#include <string.h>
 
 VFS::Mount VFS::mounts[4];
 size_t VFS::mountCount = 0;
@@ -22,25 +23,50 @@ int VFS::mount(FSOps *fs, uint8_t drive, const char *path) {
 }
 
 int VFS::resolve(const char *path, inode **out) {
-    // TODO: Resolve mount based on path
-    inode* current = mounts[0].root;
+    if (!out || !*path) return 1;
 
+    inode* current = nullptr;
+    FSOps* fs = nullptr;
+
+    size_t bestLen = 0;
+    for (size_t i = 0; i < mountCount; i++) {
+        const char* mountPath = mounts[i].path;
+
+        size_t len = strlen(mountPath);
+        if (len == 0) continue;
+
+        if (len == 1) {
+            if (bestLen == 0) {
+                bestLen = 1;
+                current = mounts[i].root;
+                fs = mounts[i].fs;
+            }
+        }
+
+        if (strncmp(path, mountPath, len) == 0 && (path[len] == '/' || path[len] == 0)) {
+            if (len > bestLen) {
+                bestLen = len;
+                current = mounts[i].root;
+                fs = mounts[i].fs;
+            }
+        }
+    }
+
+    if (!current) return 1;
+
+    path += bestLen;
     while (*path == '/') path++;
 
     char name[256];
-
     while (*path) {
         size_t len = 0;
-
-        while (path[len] && path[len] != '/')
-            name[len++] = path[len];
+        while (path[len] && path[len] != '/') name[len++] = path[len];
         name[len] = 0;
 
         if (current->type != inode::INODE_DIR) return 1;
 
         inode* next;
-        if (current->fs->lookup(current, name, &next) != 0) return 1;
-
+        if (!current->fs || current->fs->lookup(current, name, &next) != 0) return 1;
         current = next;
         path += len;
         while (*path == '/') path++;
@@ -59,30 +85,37 @@ size_t VFS::read(inode* node, void* buffer, size_t offset, size_t size) {
     return node->fs->read(node, buffer, offset, size);
 }
 
-inode* VFS::open(const char *path) {
-    inode* current = mounts[0].root;
+size_t VFS::write(inode *node, void *buffer, size_t offset, size_t size) {
+    if (!node || !buffer) return 0;
 
-    while (*path == '/') path++;
+    if (node->type != inode::INODE_FILE) return 0;
+    if (!node->fs || !node->fs->write) return 0;
 
-    char name[256];
+    return node->fs->write(node, buffer, offset, size);
+}
 
-    while (*path) {
-        size_t len = 0;
+inode* VFS::open(const char *path, uint32_t flags) {
+    inode* node = nullptr;
 
-        if (current->type != inode::INODE_DIR) return nullptr;
+    if(resolve(path, &node) == 0) return node;
 
-        while (path[len] && path[len] != '/') name[len++] = path[len];
-        name[len] = 0;
+    if (!(flags & O_CREATE)) return nullptr;
 
-        inode* next;
-        if (current->fs->lookup(current, name, &next) != 0) return nullptr;
+    char parentPath[256], name[256];
+    splitPath(path, parentPath, name);
 
-        current = next;
-        path += len;
-        while (*path == '/') path++;
-    }
+    inode* parent = nullptr;
+    if (resolve(parentPath, &parent) != 0) return nullptr;
+    if (!parent->fs || !parent->fs->create) return nullptr;
 
-    return current;
+    inode* newNode = nullptr;
+    if (parent->fs->create(parent, name, &newNode, false) != 0)
+        return nullptr;
+
+    newNode->flags = flags;
+
+    return newNode;
+    
 }
 
 void VFS::close(inode *node) {
