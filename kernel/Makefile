@@ -62,3 +62,8 @@ run: $(KERNEL_ELF_OUTPUT) $(DISK_IMAGE)
 
 run-debug: $(KERNEL_ELF_OUTPUT) $(DISK_IMAGE)
 	qemu-system-i386 -s -S -cdrom kernel.iso -serial file:serial.log -drive format=raw,file=$(DISK_IMAGE) -boot order=dc
+
+# Mount disk.img as a loopback device on linux. Use at your own risk
+mount-disk:
+	sudo mkdir -p /mnt/mydisk
+	sudo mount -o loop disk.img /mnt/mydisk
