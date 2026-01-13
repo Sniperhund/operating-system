@@ -55,7 +55,9 @@ private:
         FSOps* fs;
     };
 
-    static Mount mounts[4];
+    static constexpr uint32_t MAX_MOUNTS = 8;
+
+    static Mount mounts[MAX_MOUNTS];
     static size_t mountCount;
 
     static void splitPath(const char* path, char* parent, char* name);

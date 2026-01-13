@@ -1,4 +1,5 @@
 #include "fs/vfs.h"
+#include "error.h"
 #include <string.h>
 
 VFS::Mount VFS::mounts[4];
@@ -11,7 +12,8 @@ int VFS::init() {
 
 int VFS::mount(FSOps *fs, uint8_t drive, const char *path) {
     inode* root;
-    if (fs->mount((void*)(uintptr_t)drive, &root) != 0) return 1;
+    if (fs->mount((void*)(uintptr_t)drive, &root) != 0) return E_MOUNTNPOS;
+    if (mountCount <= MAX_MOUNTS) return E_MOUNTNPOS;
 
     mounts[mountCount++] = {
         path,
@@ -52,7 +54,7 @@ int VFS::resolve(const char *path, inode **out) {
         }
     }
 
-    if (!current) return 1;
+    if (!current) return E_NOENT;
 
     path += bestLen;
     while (*path == '/') path++;
@@ -63,7 +65,7 @@ int VFS::resolve(const char *path, inode **out) {
         while (path[len] && path[len] != '/') name[len++] = path[len];
         name[len] = 0;
 
-        if (current->type != inode::INODE_DIR) return 1;
+        if (current->type != inode::INODE_DIR) return E_NOTDIR;
 
         inode* next;
         if (!current->fs || current->fs->lookup(current, name, &next) != 0) return 1;

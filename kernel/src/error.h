@@ -5,3 +5,4 @@
 #define E_NOTDIR    3 /* Not a directory */
 #define E_ISDIR     4 /* Is a directory */
 #define E_NOTUNIQ   5 /* Name not unique */
+#define E_MOUNTNPOS 6 /* Mount not possible */
