@@ -1,4 +1,5 @@
 #include "pmm.h"
+#include "x86/memory/paging.h"
 #include <string.h>
 #include <limits.h>
 #include <stdio.h>
@@ -45,7 +46,17 @@ size_t PMM::findFirstFreeFrame(uint32_t amount) {
         }
     }
 
-    return -1; // Not enough consecutive free frames found
+    return 0xFFFFFFFF; // Not enough consecutive free frames found
+}
+
+void* PMM::allocPage() {
+    size_t frame = findFirstFreeFrame();
+    if (frame != 0xFFFFFFFF) {
+        mark(frame);
+        return (void*)(frame * PAGE_SIZE);
+    }
+
+    return nullptr;
 }
 
 size_t PMM::physToFrame(void *phys) {

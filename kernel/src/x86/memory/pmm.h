@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define PAGE_ALIGNDOWN(addr) ((((uint32_t)(addr)) & 0xFFFFF000))
-#define PAGE_ALIGNUP(addr) ((((uint32_t)(addr)) & 0xFFFFF000) + 0x3FFF)
+#define PAGE_ALIGNUP(addr) (((uint32_t)(addr) + 0xFFF) & ~0xFFF);
 
 class PMM {
 public:
@@ -15,6 +15,7 @@ public:
     static bool isMarked(size_t frame);
 
     static size_t findFirstFreeFrame(uint32_t amount = 1);
+    static void* allocPage();
 
     /**
      * Address gets aligned down (0x4050 -> 0x4000) before the frame is returned
