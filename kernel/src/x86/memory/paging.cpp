@@ -71,8 +71,9 @@ void* Paging::virtToPhys(PD* dir, void* virt) {
     return (void*)((frame << 12) + offset);
 }
 
-int Paging::mapregion(PD* dir, void* virtStart, void* virtEnd, void* physStart) {
-    if (!dir) dir = s_kernelDir;
+int Paging::mapregion(void* vDir, void* virtStart, void* virtEnd, void* physStart) {
+    if (!vDir) vDir = s_kernelDir;
+    PD* dir = (PD*)vDir;
     
     uint32_t vStart = PAGE_ALIGNDOWN(virtStart);
     // FIX: This is technically incorrect, but it fixes a page fault (until I have a kernel heap)
@@ -88,8 +89,9 @@ int Paging::mapregion(PD* dir, void* virtStart, void* virtEnd, void* physStart) 
     return 0;
 }
 
-int Paging::mappage(PD *dir, void *virt, size_t frame) {
-    if (!dir) dir = s_kernelDir;
+int Paging::mappage(void *vDir, void *virt, size_t frame) {
+    if (!vDir) vDir = s_kernelDir;
+    PD* dir = (PD*)vDir;
 
     uint32_t pdIdx = PD_INDEX(virt), ptIdx = PT_INDEX(virt);
     
@@ -114,7 +116,7 @@ int Paging::mappage(PD *dir, void *virt, size_t frame) {
         if (frame) table->pages[ptIdx].frame = frame;
         else {
             void* ptr = (PD*)PageHeap::allocPage();
-            uint32_t ptFrame = PMM::physToFrame((void*)((uintptr_t)table - LOAD_MEMORY_ADDRESS));
+            uint32_t ptFrame = PMM::physToFrame((void*)((uintptr_t)ptr - LOAD_MEMORY_ADDRESS));
             table->pages[ptIdx].frame = ptFrame;
         }
 
@@ -137,7 +139,7 @@ void Paging::switchPD(PD *dir, bool isPhysAddr) {
     if (isPhysAddr) phys = (uint32_t)dir;
     else phys = (uint32_t)dir - LOAD_MEMORY_ADDRESS;
 
-    s_currentDir = (PD*)phys;
+    s_currentDir = dir;
     
     asm volatile("mov %0, %%cr3" : : "r"(phys));
 }
@@ -165,4 +167,22 @@ int Paging::pageFaultHandler(CPUStatus* status) {
 
 Paging::PD* Paging::currentPD() {
     return s_currentDir;
+}
+
+void* mmap(void* addr, size_t length, uint8_t prot) {
+    return mmap(Paging::currentPD(), addr, length, prot);
+}
+
+void* mmap(void* dir, void* addr, size_t length, uint8_t prot) {
+    if (!addr) return nullptr;
+
+    length = PAGE_ALIGNUP(length);
+
+    for (size_t i = 0; i < length; i += PAGE_SIZE) {
+        size_t frame = PMM::findFirstFreeFrame();
+        PMM::mark(frame);
+        Paging::mappage(dir, (void*)((uintptr_t)addr + i), frame);
+    }
+
+    return addr;
 }

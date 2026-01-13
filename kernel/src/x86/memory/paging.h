@@ -63,10 +63,15 @@ public:
 
     static void* virtToPhys(PD* dir, void* virt);
 
-    static int mapregion(PD* dir, void* virtStart, void* virtEnd, void* physStart);
-    static int mappage(PD* dir, void* virt, size_t frame);
+    static int mapregion(void* dir, void* virtStart, void* virtEnd, void* physStart);
+    static int mappage(void* dir, void* virt, size_t frame);
     
     static void switchPD(PD *dir, bool isPhysAddr);
 
     static PD* currentPD();
 };
+
+void* mmap(void* addr, size_t length, uint8_t prot);
+void* mmap(void* dir, void* addr, size_t length, uint8_t prot);
+
+void mumap(void* addr, size_t length);
