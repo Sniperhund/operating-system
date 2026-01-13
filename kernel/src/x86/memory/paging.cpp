@@ -1,4 +1,5 @@
 #include "paging.h"
+#include "error.h"
 #include "panic.h"
 #include "x86/idt.h"
 #include "x86/memory/heap.h"
@@ -16,6 +17,8 @@ Paging::PD* Paging::s_currentDir = nullptr;
 extern char kernel_start[];
 extern char kernel_end[];
 
+static_assert(LOAD_MEMORY_ADDRESS % PAGE_SIZE == 0, "LOAD_MEMORY_ADDRESS macro is not page aligned");
+
 int Paging::init() {
     IDT::registerExceptionHandler(0xE, Paging::pageFaultHandler);
 
@@ -32,14 +35,18 @@ int Paging::init() {
         PMM::mark(PMM::physToFrame((void*)addr));
     }
 
+    // PD have 4KiB of x86 PD and 4KiB of ref tables (Just pointer to the first 4KiB tables)
     s_kernelDir = (PD*)PageHeap::allocPage(2);
+
+    if (s_kernelDir == nullptr) return E_NOMEM;
+
     uint32_t frame = PMM::physToFrame((void*)((uintptr_t)s_kernelDir - LOAD_MEMORY_ADDRESS));
     PMM::mark(frame);
     PMM::mark(frame + 1);
     memset(s_kernelDir, 0, sizeof(PD));
 
-    mapregion(nullptr, 0, (void*)0x100000, 0);
-    mapregion(nullptr, (void*)(LOAD_MEMORY_ADDRESS), (void*)(LOAD_MEMORY_ADDRESS + 0x800000), 0);
+    mapregion(nullptr, 0, (void*)0x100000, 0, PROT_WRITE | PROT_KERNEL);
+    mapregion(nullptr, (void*)(LOAD_MEMORY_ADDRESS), (void*)(LOAD_MEMORY_ADDRESS + 0x800000), 0, PROT_WRITE | PROT_KERNEL);
 
     switchPD(s_kernelDir, false);
 
@@ -71,17 +78,19 @@ void* Paging::virtToPhys(PD* dir, void* virt) {
     return (void*)((frame << 12) + offset);
 }
 
-int Paging::mapregion(void* vDir, void* virtStart, void* virtEnd, void* physStart) {
+int Paging::mapregion(void* vDir, void* virtStart, void* virtEnd, void* physStart, uint8_t prot) {
     if (!vDir) vDir = s_kernelDir;
     PD* dir = (PD*)vDir;
     
     uint32_t vStart = PAGE_ALIGNDOWN(virtStart);
-    // FIX: This is technically incorrect, but it fixes a page fault (until I have a kernel heap)
     uint32_t vEnd = PAGE_ALIGNUP(virtEnd);
     uint32_t pStart = PAGE_ALIGNDOWN(physStart);
 
     while (vStart < vEnd) {
-        mappage(dir, (void*)vStart, PMM::physToFrame((void*)pStart));
+        int result = mappage(dir, (void*)vStart, PMM::physToFrame((void*)pStart), prot);
+
+        if (result != 0) return result;
+
         vStart += PAGE_SIZE;
         pStart += PAGE_SIZE;
     }
@@ -89,7 +98,7 @@ int Paging::mapregion(void* vDir, void* virtStart, void* virtEnd, void* physStar
     return 0;
 }
 
-int Paging::mappage(void *vDir, void *virt, size_t frame) {
+int Paging::mappage(void *vDir, void *virt, size_t frame, uint8_t prot) {
     if (!vDir) vDir = s_kernelDir;
     PD* dir = (PD*)vDir;
 
@@ -98,15 +107,18 @@ int Paging::mappage(void *vDir, void *virt, size_t frame) {
     PT* table = dir->refTables[pdIdx];
     if (!table) {
         table = (PT*)(PD*)PageHeap::allocPage();
+
+        if (table == nullptr) return E_NOMEM; 
+
         uint32_t ptFrame = PMM::physToFrame((void*)((uintptr_t)table - LOAD_MEMORY_ADDRESS));
         PMM::mark(ptFrame);
 
         memset((void*)((uint32_t)table), 0, 4096);
 
         dir->tables[pdIdx].frame = ptFrame;
-        dir->tables[pdIdx].present = 1;
-        dir->tables[pdIdx].rw = 1;
-        dir->tables[pdIdx].user = 1;
+        dir->tables[pdIdx].present = (prot != PROT_NONE) ? 1 : 0;
+        dir->tables[pdIdx].rw = (prot & PROT_WRITE) ? 1 : 0;
+        dir->tables[pdIdx].user = (prot & PROT_KERNEL) ? 0 : 1;
         dir->tables[pdIdx].page_size = 0;
 
         dir->refTables[pdIdx] = table;
@@ -116,16 +128,43 @@ int Paging::mappage(void *vDir, void *virt, size_t frame) {
         if (frame) table->pages[ptIdx].frame = frame;
         else {
             void* ptr = (PD*)PageHeap::allocPage();
+
+            if (ptr == nullptr) return E_NOMEM;
+
             uint32_t ptFrame = PMM::physToFrame((void*)((uintptr_t)ptr - LOAD_MEMORY_ADDRESS));
             table->pages[ptIdx].frame = ptFrame;
         }
 
         PMM::mark(table->pages[ptIdx].frame);
 
-        table->pages[ptIdx].present = 1;
-        table->pages[ptIdx].rw = 1;
-        table->pages[ptIdx].user = 1;
+        table->pages[ptIdx].present = (prot != PROT_NONE) ? 1 : 0;
+        table->pages[ptIdx].rw = (prot & PROT_WRITE) ? 1 : 0;
+        table->pages[ptIdx].user = (prot & PROT_KERNEL) ? 0 : 1;
+    } else {
+        return E_INVAL;
     }
+
+    asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
+
+    return 0;
+}
+
+int Paging::unmappage(void *vDir, void *virt) {
+    if ((uintptr_t)virt >= LOAD_MEMORY_ADDRESS) {
+        printf("Process attempted to ummap kernel memory at 0x%x! Killing process.\n", virt);
+        return E_KILL;
+    }
+
+    if (!vDir) vDir = s_kernelDir;
+    PD* dir = (PD*)vDir;
+
+    uint32_t pdIdx = PD_INDEX(virt), ptIdx = PT_INDEX(virt);
+    PT* table = dir->refTables[pdIdx];
+
+    if (!table || !table->pages[ptIdx].present) return E_INVAL;
+        
+    PMM::unmark(table->pages[ptIdx].frame);
+    table->pages[ptIdx].present = 0;
 
     asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
 
@@ -166,6 +205,7 @@ int Paging::pageFaultHandler(CPUStatus* status) {
 }
 
 Paging::PD* Paging::currentPD() {
+    // FIX: This may return a physical addr, not mapped
     return s_currentDir;
 }
 
@@ -174,15 +214,45 @@ void* mmap(void* addr, size_t length, uint8_t prot) {
 }
 
 void* mmap(void* dir, void* addr, size_t length, uint8_t prot) {
-    if (!addr) return nullptr;
+    if (!addr) {
+        s_error = E_INVAL;
+        return nullptr;
+    }
 
     length = PAGE_ALIGNUP(length);
 
     for (size_t i = 0; i < length; i += PAGE_SIZE) {
         size_t frame = PMM::findFirstFreeFrame();
         PMM::mark(frame);
-        Paging::mappage(dir, (void*)((uintptr_t)addr + i), frame);
+        int result = Paging::mappage(dir, (void*)((uintptr_t)addr + i), frame, prot);
+        
+        if (result) {
+            // Clean up after ourselves since it failed.
+            if (i != 0) munmap(dir, addr, i);
+            s_error = result;
+            return (void*)-1;
+        }
     }
 
     return addr;
+}
+
+int munmap(void* addr, size_t length) {
+    return munmap(Paging::currentPD(), addr, length);
+}
+
+int munmap(void *dir, void *addr, size_t length) {
+    if (!addr) return E_INVAL;
+
+    length = PAGE_ALIGNUP(length);
+
+    for (size_t i = 0; i < length; i += PAGE_SIZE) {
+        int result = Paging::unmappage(dir, (void*)((uintptr_t)addr + i));
+
+        if (result) {
+            return result;            
+        }
+    }
+
+    return 0;
 }

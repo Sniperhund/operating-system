@@ -63,15 +63,46 @@ public:
 
     static void* virtToPhys(PD* dir, void* virt);
 
-    static int mapregion(void* dir, void* virtStart, void* virtEnd, void* physStart);
-    static int mappage(void* dir, void* virt, size_t frame);
+    static int mapregion(void* dir, void* virtStart, void* virtEnd, void* physStart, uint8_t prot);
+    static int mappage(void* dir, void* virt, size_t frame, uint8_t prot);
+    static int unmappage(void* dir, void* virt);
     
     static void switchPD(PD *dir, bool isPhysAddr);
 
     static PD* currentPD();
 };
 
+#define PROT_WRITE  (1 << 0)
+#define PROT_READ   (1 << 1)
+#define PROT_KERNEL (1 << 2)
+#define PROT_NONE   (0)
+
+/**
+ * Create mappings for the specified address range.
+ *
+ * @return On success, mmap() returns a pointer to the mapped area. On failure, it returns the (void*)-1 and sets s_error to the error code
+ */
 void* mmap(void* addr, size_t length, uint8_t prot);
+
+/**
+ * Create mappings for the specified address range.
+ *
+ * @param dir The specific page directory the map should happen on
+ * @return On success, mmap() returns a pointer to the mapped area. On failure, it returns the (void*)-1 and sets s_error to the error code
+ */
 void* mmap(void* dir, void* addr, size_t length, uint8_t prot);
 
-void mumap(void* addr, size_t length);
+/**
+ * Unmap mappings for the specified address range.
+ *
+ * @return On success, munmap() returns 0. On failure, it returns the error code
+ */
+int munmap(void* addr, size_t length);
+
+/**
+ * Unmap mappings for the specified address range.
+ *
+ * @param dir The specific page directory the umap should happen on
+ * @return On success, munmap() returns 0. On failure, it returns the error code
+ */
+int munmap(void* dir, void* addr, size_t length);

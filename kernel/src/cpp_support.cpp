@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include "x86/memory/heap.h"
+#include "error.h"
 
 extern "C" void __cxa_pure_virtual() {
 

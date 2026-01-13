@@ -25,7 +25,7 @@ uint8_t ELFLoader::loadExecutable(void* file) {
         uint32_t size = PAGE_ALIGNUP(ph[i].memSize + diff);
 
         for (uint32_t j = 0; j < size; j += PAGE_SIZE) {
-            mmap((void*)(vaddr + j), PAGE_SIZE, 0);
+            mmap((void*)(vaddr + j), PAGE_SIZE, PROT_WRITE);
         }
 
         void* src = (uint8_t*)file + ph[i].offset;
