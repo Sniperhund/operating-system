@@ -2,7 +2,7 @@
 #include "error.h"
 #include <string.h>
 
-VFS::Mount VFS::mounts[4];
+VFS::Mount VFS::mounts[MAX_MOUNTS];
 size_t VFS::mountCount = 0;
 
 int VFS::init() {
@@ -13,7 +13,7 @@ int VFS::init() {
 int VFS::mount(FSOps *fs, uint8_t drive, const char *path) {
     inode* root;
     if (fs->mount((void*)(uintptr_t)drive, &root) != 0) return E_MOUNTNPOS;
-    if (mountCount <= MAX_MOUNTS) return E_MOUNTNPOS;
+    if (mountCount >= MAX_MOUNTS) return E_MOUNTNPOS;
 
     mounts[mountCount++] = {
         path,
