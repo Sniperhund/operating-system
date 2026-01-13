@@ -1,3 +1,4 @@
+#include "exec/elfloader.h"
 #include "fs/fat32.h"
 #include "drivers/text.h"
 #include "fs/ramfs.h"
@@ -41,17 +42,18 @@ extern "C" void kernel_main() {
     VFS::mount(&FAT32VFS::FAT32Ops, 0, "/");
     VFS::mount(&RamFS::RAMFSOps, 0, "/proc");
 
-    inode* file = VFS::open("/proc/version", O_CREATE | O_WRITE);
+    inode* file = VFS::open("/program.elf");
 
-    const char* text = "OS v0.1\n";
-    VFS::write(file, (void*)text, 0, strlen(text));
+    if (!file) {
+        printf("Couldn't open file\n");
+        return;
+    }
 
-    printf("%p, %d\n", file, file->size);
+    printf("File size: %d\n", file->size);
 
-    char buf[32];
-    size_t n = VFS::read(file, buf, 0, sizeof(buf));
-    buf[n] = 0;
-    printf("Buffer: %s", buf);
+    void* buffer = Heap::alloc(file->size);
+    VFS::read(file, buffer, 0, file->size);
 
-    VFS::close(file);
+    ELFLoader::loadExecutable(buffer);
+    printf("Program returned?");
 }
