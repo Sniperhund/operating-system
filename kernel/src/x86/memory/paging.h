@@ -67,7 +67,9 @@ public:
     static int mappage(void* dir, void* virt, size_t frame, uint8_t prot);
     static int unmappage(void* dir, void* virt);
     
-    static void switchPD(PD *dir, bool isPhysAddr);
+    static void switchPD(void *dir, bool isPhysAddr);
+
+    static PD* createPD();
 
     static PD* currentPD();
 };

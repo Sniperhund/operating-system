@@ -2,7 +2,6 @@
 #include "error.h"
 #include "panic.h"
 #include "x86/idt.h"
-#include "x86/memory/heap.h"
 #include "x86/memory/pageHeap.h"
 #include "x86/memory/pmm.h"
 #include <string.h>
@@ -171,8 +170,28 @@ int Paging::unmappage(void *vDir, void *virt) {
     return 0;
 }
 
-void Paging::switchPD(PD *dir, bool isPhysAddr) {
-    if (!dir) PANIC("Paging", "Page directory is empty");
+Paging::PD* Paging::createPD() {
+    PD* pd = (PD*)PageHeap::allocPage(2);
+
+    if (!pd) {
+        s_error = E_NOMEM;
+        return nullptr;
+    }
+
+    uint32_t frame = PMM::physToFrame((void*)((uintptr_t)pd - LOAD_MEMORY_ADDRESS));
+    PMM::mark(frame);
+    PMM::mark(frame + 1);
+    memset(pd, 0, sizeof(PD));
+
+    mapregion(pd, 0, (void*)0x100000, 0, PROT_WRITE);
+    mapregion(pd, (void*)(LOAD_MEMORY_ADDRESS), (void*)(LOAD_MEMORY_ADDRESS + 0x800000), 0, PROT_WRITE | PROT_KERNEL);
+
+    return pd;
+}
+
+void Paging::switchPD(void *vDir, bool isPhysAddr) {
+    if (!vDir) PANIC("Paging", "Page directory is empty");
+    PD* dir = (PD*)vDir;
 
     uint32_t phys = 0;
     if (isPhysAddr) phys = (uint32_t)dir;
