@@ -60,7 +60,7 @@ void* PageHeap::allocPage(size_t amount) {
 
         current = NEXT_HEADER(current);
         if (current->block == nullptr) {
-            if (s_lastAccessed != s_first) {
+            if (s_lastAccessed != nullptr) {
                 current = s_first;
                 s_lastAccessed = nullptr;
                 candidate = nullptr;
