@@ -20,7 +20,7 @@ header_end:
 
 global start
 
-section .text
+section .start
 low_start equ (start - VM_BASE)
 start:
     mov ecx, (TEMP_PD - VM_BASE)
