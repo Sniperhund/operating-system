@@ -9,7 +9,7 @@
 
 #define PT_LOAD             (1)
 
-uint8_t ELFLoader::loadExecutable(void* file) {
+uint8_t ELFLoader::loadExecutable(void* file, uint32_t* entry) {
     Header* hdr = (Header*)file;
 
     if (hdr->type != ET_EXEC) return TYPE;
@@ -38,7 +38,7 @@ uint8_t ELFLoader::loadExecutable(void* file) {
         }
     }
 
-    asm volatile("jmp *%0" :: "r"(hdr->entry));
+    *entry = hdr->entry;
 
     return NONE;
 }

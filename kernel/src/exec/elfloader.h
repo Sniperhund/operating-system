@@ -5,7 +5,7 @@
 class ELFLoader {
 public:
     static int loadBinary();
-    static uint8_t loadExecutable(void* file);
+    static uint8_t loadExecutable(void* file, uint32_t* entry);
 
     enum Error {
         NONE = 0,
