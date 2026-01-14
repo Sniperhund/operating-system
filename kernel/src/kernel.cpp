@@ -1,14 +1,17 @@
 #include "exec/elfloader.h"
+#include "exec/process.h"
 #include "fs/fat32.h"
 #include "drivers/text.h"
 #include "fs/ramfs.h"
 #include "fs/vfs.h"
+#include "sched/scheduler.h"
 #include "x86/gdt.h"
 #include "x86/idt.h"
 #include "x86/memory/heap.h"
 #include "x86/memory/pageHeap.h"
 #include "x86/memory/paging.h"
 #include "x86/pic.h"
+#include "x86/irq.h"
 #include "drivers/keyboard.h"
 #include "drivers/ide.h"
 #include <file.h>
@@ -16,8 +19,13 @@
 #include <stdio.h>
 #include "debug.h"
 
+int time = 0;
+
 void timer(CPUStatus* status) {
-    printf(".");
+    time++;
+
+    if (time % 10 == 0)
+        Scheduler::switchTask(status);
 }
 
 extern char kernel_end[];
@@ -26,34 +34,25 @@ extern "C" void kernel_main() {
     Text::setColor(Text::BLACK, Text::LIGHT_BLUE);
     Text::init();
 
-    PIC::disable();
     DO_INIT("Initializing GDT", GDT::init(true));
     DO_INIT("Initialising PIC", PIC::remap());
     DO_INIT("Initialising IDT", IDT::init());
-    //IRQ::registerIRQ(0, timer);
+    IRQ::registerIRQ(0, timer);
     Keyboard::init(true);
     DO_INIT("Initialising Heap", Heap::init(kernel_end, 0xF0000));
-    DO_INIT("Initialising PageHeap", PageHeap::init(16));
+    DO_INIT("Initialising PageHeap", PageHeap::init(32));
     DO_INIT("Initialising Paging", Paging::init());
     DO_INIT("Initialising IDE", IDE::init(0x1F0, 0x3F6, 0x170, 0x376, 0x000));
+    DO_INIT("Initialising VFS", VFS::init());
 
-    VFS::init();
-
+    // Move to init process
     VFS::mount(&FAT32VFS::FAT32Ops, 0, "/");
     VFS::mount(&RamFS::RAMFSOps, 0, "/proc");
 
-    inode* file = VFS::open("/program.elf");
+    DO_INIT("Initialising Scheduler", Scheduler::init());
 
-    if (!file) {
-        printf("Couldn't open file\n");
-        return;
-    }
-
-    printf("File size: %d\n", file->size);
-
-    void* buffer = Heap::alloc(file->size);
-    VFS::read(file, buffer, 0, file->size);
-
-    ELFLoader::loadExecutable(buffer);
-    printf("Program returned?");
+    // Test program
+    exec("/hello-0.elf", "");
+    exec("/hello-1.elf", "");
+    Scheduler::run();
 }
