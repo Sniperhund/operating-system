@@ -64,8 +64,8 @@ void IDT::exceptionHandler(CPUStatus* s) {
     }
 
 print:
-    printf("DS: 0x%x, EDI: 0x%x, ESI: 0x%x, EBP: 0x%x, ESP: 0x%x, EBX: 0x%x, EDX: 0x%x, ECX: 0x%x, EAX: 0x%x\n",
-        s->ds, s->edi, s->esi, s->ebp, s->esp, s->ebx, s->edx, s->ecx, s->eax);
+    printf("DS: 0x%x, EDI: 0x%x, ESI: 0x%x, EBP: 0x%x, ESP: 0x%x, EBX: 0x%x, EDX: 0x%x, ECX: 0x%x, EAX: 0x%x, EIP: 0x%x\n",
+        s->ds, s->edi, s->esi, s->ebp, s->esp, s->ebx, s->edx, s->ecx, s->eax, s->eip);
 
     if (result == PRINT_RECOVER)
         return;
