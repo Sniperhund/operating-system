@@ -25,6 +25,6 @@ void TSS::writeTSS(uint32_t index) {
     asm volatile("mov %%esp, %0" : "=r"(s_tss.esp0) : :);
 }
 
-void TSS::setKernelESP() {
-    asm volatile("mov %%esp, %0" : "=r"(s_tss.esp0) : :);
+void TSS::setKernelESP(uint32_t esp) {
+    s_tss.esp0 = esp;
 }

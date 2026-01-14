@@ -38,7 +38,7 @@ public:
      * Writes the TSS to the GDT
      */
     static void writeTSS(uint32_t index);
-    static void setKernelESP();
+    static void setKernelESP(uint32_t esp);
 
 private:
     static Entry s_tss;
