@@ -18,15 +18,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "debug.h"
-
-int time = 0;
-
-void timer(CPUStatus* status) {
-    time++;
-
-    if (time % 10 == 0)
-        Scheduler::switchTask(status);
-}
+#include "x86/syscall/syscall.h"
 
 extern char kernel_end[];
 
@@ -37,7 +29,6 @@ extern "C" void kernel_main() {
     DO_INIT("Initializing GDT", GDT::init(true));
     DO_INIT("Initialising PIC", PIC::remap());
     DO_INIT("Initialising IDT", IDT::init());
-    IRQ::registerIRQ(0, timer);
     Keyboard::init(true);
     DO_INIT("Initialising Heap", Heap::init(kernel_end, 0xF0000));
     DO_INIT("Initialising PageHeap", PageHeap::init(32));
@@ -50,6 +41,7 @@ extern "C" void kernel_main() {
     VFS::mount(&RamFS::RAMFSOps, 0, "/proc");
 
     DO_INIT("Initialising Scheduler", Scheduler::init());
+    DO_INIT("Initialising Syscalls", Syscall::init());
 
     // Test program
     exec("/hello-0.elf", "");

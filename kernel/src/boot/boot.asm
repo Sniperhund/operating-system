@@ -46,6 +46,9 @@ higher_half:
     extern kernel_main
     call kernel_main
 
+    mov eax, 0
+    int 0x80
+
 .end:
     hlt
     jmp .end

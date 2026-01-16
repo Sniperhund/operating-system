@@ -1,3 +1,5 @@
+section .text
+
 %macro isr_non_err 1
 isr_stub_%+%1:
     cli
@@ -116,3 +118,13 @@ irq_stub_table:
     dd irq_stub_%+i
 %assign i i+1
 %endrep
+
+extern syscallHandlerC
+global syscall_stub
+syscall_stub:
+    push byte 0
+    push byte 0x80
+    PUSHALL
+    call syscallHandlerC
+    POPALL
+    iret

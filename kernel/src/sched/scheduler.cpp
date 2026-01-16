@@ -68,7 +68,6 @@ void Scheduler::switchTask(CPUStatus *cpu) {
 
     // Change to actually switch
     currentProc++;
-    printf("Switching to %d process\n", currentProc % s_processCount);
     switchTo(current, s_processes[currentProc % s_processCount]);
     
 

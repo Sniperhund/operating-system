@@ -26,6 +26,10 @@ int IDT::init() {
         setDescriptor(i + 32, irq_stub_table[i], 0x8E);
     }
 
+    extern void* syscall_stub;
+
+    setDescriptor(0x80, &syscall_stub, 0xEE);
+
     asm volatile("lidt %0" : : "m"(s_idtr));
     asm volatile("sti");
 
