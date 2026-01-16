@@ -66,4 +66,4 @@ run-debug: $(KERNEL_ELF_OUTPUT) $(DISK_IMAGE)
 # Mount disk.img as a loopback device on linux. Use at your own risk
 mount-disk:
 	sudo mkdir -p /mnt/mydisk
-	sudo mount -o loop disk.img /mnt/mydisk
+	sudo mount -o loop,rw,umask=000 $(DISK_IMAGE) /mnt/mydisk
