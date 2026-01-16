@@ -12,12 +12,17 @@ The code in most places aren't very good (I think so atleast), but it works _(mo
 The features implemented are as follows:
 
 -   Interrupts (Exceptions and IRQs, though a syscall interrupt is WIP)
--   Paging (not fully with permissions and other flags)
--   TSS with the ability to jump into usermode (though I'm working on a better implementation of usermode)
+-   Paging (now with permissions)
+-   TSS
 -   Kernel heap
 -   printf for the Kernel
--   A few libc functions
--   FAT32 and VFS (only reading for now)
+-   A few libc functions (for the kernel only)
+-   FAT32 (only reading for now)
+-   RamFS (reading and writing)
+-   VFS
+-   ELF loader (only for executables)
+-   Preemptive scheduler (round robin)
+-   Usermode (no usermode libc etc)
 
 ## Building
 
