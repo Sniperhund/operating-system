@@ -18,7 +18,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "debug.h"
-#include "x86/syscall/syscall.h"
+#include "syscall/syscall.h"
 
 extern char kernel_end[];
 
@@ -44,7 +44,7 @@ extern "C" void kernel_main() {
     DO_INIT("Initialising Syscalls", Syscall::init());
 
     // Test program
-    exec("/hello-0.elf", "");
-    exec("/hello-1.elf", "");
+    exec("/test.elf", "");
+    //exec("/hello-1.elf", "");
     Scheduler::run();
 }
