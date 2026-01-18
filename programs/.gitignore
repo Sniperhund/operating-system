@@ -1,0 +1,4 @@
+binaries/
+.cache
+compile_commands.json
+sysroot
