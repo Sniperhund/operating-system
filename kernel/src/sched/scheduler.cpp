@@ -12,6 +12,8 @@ Proc* Scheduler::s_processes[MAX_PROCESSES];
 uint32_t Scheduler::s_time = 0;
 uint32_t Scheduler::s_processCount = 0;
 
+Proc* current = nullptr;
+
 int Scheduler::init() {
     memset(s_processes, 0, sizeof(s_processes));
     return 0;
@@ -64,14 +66,33 @@ void Scheduler::switchTask(CPUStatus *cpu) {
         ctx->eflags = cpu->eflags;
         ctx->useresp = cpu->useresp;
         ctx->ss = cpu->ss;
+
+        if (current->state == RUNNING)
+            current->state = READY;
     }
 
     // Change to actually switch
-    currentProc++;
-    switchTo(current, s_processes[currentProc % s_processCount]);
-    
+    Proc* next = nullptr;
+    uint32_t attempts = 0;
+
+    while (attempts < s_processCount) {
+        currentProc = (currentProc + 1) % s_processCount;
+        next = s_processes[currentProc];
+
+        if (next && next->state == READY)
+            break;
+
+        attempts++;
+    }
+
+    if (next && next->state == READY) {
+        next->state = RUNNING;
+        switchTo(current, next);
+    }
 
     asm volatile("sti");
+    printf("No processes ready\n");
+    while (1) { asm volatile("hlt"); }
 }
 
 void Scheduler::timer(CPUStatus* status) {

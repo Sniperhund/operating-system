@@ -3,7 +3,7 @@
 #include "exec/process.h"
 #include "x86/idt.h"
 
-static Proc* current = nullptr;
+extern Proc* current;
 
 class Scheduler {
 public:

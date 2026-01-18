@@ -9,7 +9,8 @@ enum State {
     READY,
     BLOCKED,
     NEW,
-    KILLED
+    KILLED,
+    EXITED
 };
 
 struct CPUContext {
@@ -38,8 +39,6 @@ struct Proc {
     void* pd;
 
     int exitCode;
-
-    uint32_t errorNo;
 
     int addFd(inode* file);
     int removeFd(size_t fd);
