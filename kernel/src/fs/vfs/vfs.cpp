@@ -99,7 +99,10 @@ size_t VFS::write(inode *node, void *buffer, size_t offset, size_t size) {
 inode* VFS::open(const char *path, uint32_t flags) {
     inode* node = nullptr;
 
-    if(resolve(path, &node) == 0) return node;
+    if(resolve(path, &node) == 0) {
+        node->refCount++;
+        return node;
+    }
 
     if (!(flags & O_CREATE)) return nullptr;
 
