@@ -15,14 +15,12 @@ uint32_t Syscall::write(CPUStatus* s) {
 uint32_t Syscall::open(CPUStatus* s) {
     inode* file = VFS::open((const char*)s->ebx, (uint32_t)s->ecx);
     if (!file) {
-        current->errorNo = E_NOENT;
-        return -1;
+        return E_NOENT;
     }
 
     int fd = current->addFd(file);
     if (fd == -1) {
-        current->errorNo = E_MFILE;
-        return -1;
+        return E_MFILE;
     }
 
     return fd;

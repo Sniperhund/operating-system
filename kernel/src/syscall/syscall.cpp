@@ -10,10 +10,12 @@ Syscall::func Syscall::s_routines[Syscall::MAX_SYSCALLS];
 int Syscall::init() {
     memset(&s_routines, 0, sizeof(func) * MAX_SYSCALLS);
 
-    s_routines[0] = read;
-    s_routines[1] = write;
-    s_routines[2] = open;
-    s_routines[3] = close;
+    s_routines[0x0] = read;
+    s_routines[0x1] = write;
+    s_routines[0x2] = open;
+    s_routines[0x3] = close;
+    
+    s_routines[0x4] = exit;
 
     return 0;
 }
