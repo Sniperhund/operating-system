@@ -11,15 +11,15 @@ public:
 
 private:
     friend void ::syscallHandlerC(CPUStatus*);
-
-    typedef void (*func) (CPUStatus*);
+    
+    typedef uint32_t (*func) (CPUStatus*);
 
     static constexpr uint32_t MAX_SYSCALLS = 4;
 
     static func s_routines[MAX_SYSCALLS];
 
-    static void read(CPUStatus* s);
-    static void write(CPUStatus* s);
-    static void open(CPUStatus* s);
-    static void close(CPUStatus* s);
+    static uint32_t read(CPUStatus* s);
+    static uint32_t write(CPUStatus* s);
+    static uint32_t open(CPUStatus* s);
+    static uint32_t close(CPUStatus* s);
 };

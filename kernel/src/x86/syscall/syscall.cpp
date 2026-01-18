@@ -1,4 +1,5 @@
 #include "syscall.h"
+#include "sched/scheduler.h"
 #include "x86/idt.h"
 #include "panic.h"
 #include "string.h"
@@ -18,13 +19,12 @@ int Syscall::init() {
 }
 
 extern "C" void syscallHandlerC(CPUStatus* s) {
-    printf("Syscall! %d, %d, 0x%p", s->eax, Syscall::MAX_SYSCALLS, Syscall::s_routines[s->eax]);
-
-    if (s->eax < Syscall::MAX_SYSCALLS && Syscall::s_routines[s->eax]) {
-        Syscall::s_routines[s->eax](s);
-
-        return;
+    if (s->eax >= Syscall::MAX_SYSCALLS || !Syscall::s_routines[s->eax]) {
+        PANIC("Syscall", "Syscall not found");
     }
 
-    PANIC("Syscall", "Syscall not found");
+    int ret = Syscall::s_routines[s->eax](s);
+
+    // Return value to userspace
+    s->eax = ret;
 }

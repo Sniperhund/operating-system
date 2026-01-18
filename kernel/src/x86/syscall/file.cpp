@@ -1,18 +1,32 @@
+#include "error.h"
+#include "fs/vfs.h"
+#include "sched/scheduler.h"
 #include "syscall.h"
 #include "stdio.h"
 
-void Syscall::read(CPUStatus* s) {
-    printf("Read");
-}
-
-void Syscall::write(CPUStatus* s) {
+uint32_t Syscall::read(CPUStatus* s) {
 
 }
 
-void Syscall::open(CPUStatus* s) {
+uint32_t Syscall::write(CPUStatus* s) {
 
 }
 
-void Syscall::close(CPUStatus* s) {
+uint32_t Syscall::open(CPUStatus* s) {
+    inode* file = VFS::open((const char*)s->ebx, (uint32_t)s->ecx);
+    if (!file) {
+        current->errorNo = E_NOENT;
+        return -1;
+    }
 
+    int fd = current->addFd(file);
+    if (fd == -1) {
+        current->errorNo = E_MFILE;
+        return -1;
+    }
+
+    return fd;
+}
+
+uint32_t Syscall::close(CPUStatus* s) {
 }

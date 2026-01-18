@@ -5,6 +5,13 @@
 Heap::Header* Heap::s_start = nullptr;
 uintptr_t Heap::s_end = 0;
 
+/**
+ * Only int 0x80 (syscalls) use the heap for now, so it's unnecessary to use `cli`
+ * Though this may change when 0xE (page faults) are handled correctly since that uses the PageHeap for allocation
+ * If the memory accessed from 0x80 is required to allocate a whole new page (which I think is unlikely, but you never know)
+ *
+ * Spinlocks should be implemented though.
+ */
 int Heap::init(void *start, size_t size) {
     s_start = (Heap::Header*)start;
 
