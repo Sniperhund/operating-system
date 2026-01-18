@@ -13,3 +13,4 @@ static uint8_t s_error = 0;
 #define E_NOTUNIQ   5   /* Name not unique */
 #define E_MOUNTNPOS 6   /* Mount not possible */
 #define E_NOMEM     7   /* Cannot allocate memory */
+#define E_MFILE     8   /* Too many open files */

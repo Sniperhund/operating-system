@@ -6,11 +6,36 @@
 #include "x86/memory/heap.h"
 #include "x86/memory/paging.h"
 #include "string.h"
+#include "error.h"
 
 // TODO: Move these away
 #define KERNEL_STACK_SIZE   1024 * 16 // 16 KiB
 #define USER_STACK_SPACE    0xB0000000
 #define USER_STACK_SIZE     1024 * 32 // 32 KiB
+
+int Proc::addFd(inode* file) {
+    for (size_t fd = 0; fd < MAX_FDS; fd++) {
+        if (!files.fds[fd]) {
+            files.fds[fd] = file;
+            if (fd > files.maxFd) files.maxFd = fd;
+            return fd;
+        }
+    }
+
+    return -1;
+}
+
+int Proc::removeFd(size_t fd) {
+    if (files.maxFd >= fd || !files.fds[fd]) return E_MFILE;
+
+    files.fds[fd] = nullptr;
+    if (fd == files.maxFd) {
+        while (files.maxFd > 0 && files.fds[files.maxFd] == nullptr)
+            files.maxFd--;
+    }
+
+    return 0;
+}
 
 Proc* Proc::createProcess() {
     Proc* proc = (Proc*)Heap::alloc(sizeof(Proc));
