@@ -58,7 +58,7 @@ void exec(const char *cmd, const char *args) {
 
     proc->kstack = (void*)((uintptr_t)Heap::alloc(KERNEL_STACK_SIZE) + KERNEL_STACK_SIZE);
 
-    void* userStackBottom = mmap(proc->pd, (void*)USER_STACK_SPACE, USER_STACK_SIZE, PROT_WRITE);
+    void* userStackBottom = mmap(proc->pd, (void*)USER_STACK_SPACE, USER_STACK_SIZE + PAGE_SIZE, PROT_WRITE);
     proc->stack = (void*)((uintptr_t)userStackBottom + USER_STACK_SIZE);
     proc->ctx.useresp = (uintptr_t)proc->stack;
     proc->ctx.esp = (uintptr_t)proc->kstack;
