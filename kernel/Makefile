@@ -18,6 +18,8 @@ override CPP_FLAGS += \
     -fno-exceptions \
 	-fno-rtti
 
+DEPFLAGS = -MMD -MP
+
 # Linker and flags
 LD = i686-elf-ld
 LD_FLAGS =
@@ -36,7 +38,9 @@ dist/asm/%.o: src/%.asm
 
 dist/cpp/%.o: src/%.cpp
 	mkdir -p $(dir $@)
-	$(CPPC) $(CPP_FLAGS) -c $< -o $@
+	$(CPPC) $(CPP_FLAGS) $(DEPFLAGS) -c $< -o $@
+
+-include $(CPP_OBJECT_FILES:.o=.d)
 
 $(KERNEL_ELF_OUTPUT): $(ASM_OBJECT_FILES) $(CPP_OBJECT_FILES)
 	mkdir -p iso_root/boot
