@@ -99,7 +99,7 @@ void* Heap::allocAligned(size_t payloadSize, size_t alignment) {
 
 void Heap::free(void *ptr) {
     Header* header = GET_HEADER(ptr);
-    printf("Free was called for %u bytes\n", header->size);
+
 }
 
 void* Heap::realloc(void *ptr, size_t payloadSize) {

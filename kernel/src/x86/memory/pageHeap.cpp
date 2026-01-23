@@ -1,12 +1,14 @@
 #include "pageHeap.h"
 #include "x86/memory/heap.h"
 #include "x86/memory/paging.h"
+#include <stdio.h>
 #include <string.h>
 
 PageHeap::Header* PageHeap::s_first = nullptr;
 PageHeap::Header* PageHeap::s_lastAccessed = nullptr;
 
 #define NEXT_HEADER(header) ((PageHeap::Header*)((uintptr_t)(header) + sizeof(PageHeap::Header)))
+#define GET_HEADER(header) ((PageHeap::Header*)(s_first + (((uintptr_t)(header) - (uintptr_t)s_first) / PAGE_SIZE - 1)))
 
 int PageHeap::init(size_t maxPages) {
     s_first = (Header*)Heap::allocAligned(PAGE_SIZE * (1 + maxPages), PAGE_SIZE);
@@ -67,12 +69,13 @@ void* PageHeap::allocPage(size_t amount) {
                 freeCount = 0;
                 continue;
             } else break;
-        };
+        }
     }
 
     return nullptr;
 }
 
 void PageHeap::freePage(void *ptr) {
+    Header* header = GET_HEADER(ptr);
     
 }

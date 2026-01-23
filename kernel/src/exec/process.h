@@ -3,6 +3,7 @@
 #include "fs/vfs.h"
 #include "stdint.h"
 #include "stddef.h"
+#include <sys/types.h>
 
 enum State {
     RUNNING,
@@ -27,8 +28,8 @@ struct Files {
 };
 
 struct Proc {
-    uint32_t pid;
-    uint32_t ppid;
+    pid_t pid;
+    pid_t ppid;
 
     State state;
     CPUContext ctx;
@@ -44,6 +45,7 @@ struct Proc {
     int removeFd(size_t fd);
 
     static Proc* createProcess();
+    static void freeProcess(Proc* proc);
 };
 
 void exec(const char* cmd, const char* args);

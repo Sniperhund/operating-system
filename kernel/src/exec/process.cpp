@@ -1,5 +1,6 @@
 #include "process.h"
 #include "exec/elfloader.h"
+#include "exec/pid.h"
 #include "fs/vfs.h"
 #include "panic.h"
 #include "sched/scheduler.h"
@@ -42,12 +43,23 @@ Proc* Proc::createProcess() {
     memset(proc, 0, sizeof(Proc));
     proc->exitCode = 255;
     proc->state = NEW;
-    proc->pid = 0; // TODO: Add system to track these
+    proc->pid = PID::allocate();
     proc->pd = Paging::createPD();
 
     if (!proc->pd) return nullptr;
 
     return proc;
+}
+
+void Proc::freeProcess(Proc *proc) {
+    if (proc == current) PANIC("Process", "Attempted to free active process");
+
+    Paging::freePD(proc->pd);
+    Heap::free(proc->kstack);
+    // NOTE: Really inefficient, but it will most likely cause an exception if this proc is used again
+    //       And is therefore easier to catch bugs
+    memset(proc, 0, sizeof(Proc));
+    Heap::free(proc);
 }
 
 void exec(const char *cmd, const char *args) {
