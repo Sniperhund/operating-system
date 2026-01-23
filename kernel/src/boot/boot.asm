@@ -20,8 +20,8 @@ header_end:
 
 global start
 
+; For some reason multiboot2 boots fine when VMA is in higher half
 section .start
-low_start equ (start - VM_BASE)
 start:
     mov ecx, (TEMP_PD - VM_BASE)
     mov cr3, ecx
@@ -45,9 +45,6 @@ higher_half:
 
     extern kernel_main
     call kernel_main
-
-    mov eax, 0
-    int 0x80
 
 .end:
     hlt

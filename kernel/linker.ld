@@ -1,4 +1,4 @@
-ENTRY (low_start)
+ENTRY (start)
 
 SECTIONS {
 	. = 0xC0100000;
