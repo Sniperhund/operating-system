@@ -110,7 +110,6 @@ int Paging::mappage(void *vDir, void *virt, size_t frame, uint8_t prot) {
         if (table == nullptr) return E_NOMEM; 
 
         uint32_t ptFrame = PMM::physToFrame((void*)((uintptr_t)table - LOAD_MEMORY_ADDRESS));
-        PMM::mark(ptFrame);
 
         memset((void*)((uint32_t)table), 0, 4096);
 
@@ -187,6 +186,36 @@ Paging::PD* Paging::createPD() {
     mapregion(pd, (void*)(LOAD_MEMORY_ADDRESS), (void*)(LOAD_MEMORY_ADDRESS + 0x800000), 0, PROT_WRITE | PROT_KERNEL);
 
     return pd;
+}
+
+void Paging::freePD(void* vDir) {
+    if (!vDir) return;
+    PD* dir = (PD*)vDir;
+
+    if (dir == s_currentDir)
+        PANIC("Paging", "Attempted to free active page directory");
+
+    constexpr int KERNEL_PD_START = LOAD_MEMORY_ADDRESS >> 22;
+
+    for (int pdIdx = 0; pdIdx < KERNEL_PD_START; pdIdx++) {
+        PT* table = dir->refTables[pdIdx];
+        if (!table) continue;
+
+        for (int ptIdx = 0; ptIdx < 1024; ptIdx++) {
+            if (!table->pages[ptIdx].present) continue;
+
+            PMM::unmark(table->pages[ptIdx].frame);
+            table->pages[ptIdx].present = 0;
+        }
+
+        // Free the page table itself
+        PageHeap::freePage(table);
+
+        dir->refTables[pdIdx] = nullptr;
+        dir->tables[pdIdx].present = 0;
+    }
+
+    PageHeap::freePage(dir);
 }
 
 void Paging::switchPD(void *vDir, bool isPhysAddr) {
