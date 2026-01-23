@@ -24,5 +24,7 @@ private:
 
     static void timer(CPUStatus* status);
 
-    static void switchTo(Proc* prev, Proc* next);
+    static void purgeProcesses();
+
+    static void switchTo(Proc* next);
 };

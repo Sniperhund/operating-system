@@ -47,7 +47,7 @@ uint32_t currentProc = -1;
 
 // This is called from the timer IRQ
 void Scheduler::switchTask(CPUStatus *cpu) {
-    // This shouldn't be called before Scheduler::run
+    // NOTE: This shouldn't be called before Scheduler::run
 
     asm volatile("cli");
 
@@ -64,12 +64,16 @@ void Scheduler::switchTask(CPUStatus *cpu) {
         ctx->eip = cpu->eip;
 
         ctx->eflags = cpu->eflags;
-        ctx->useresp = cpu->useresp;
-        ctx->ss = cpu->ss;
+        if ((cpu->cs & 0x3) == 3) { // If true CPL == 3
+            ctx->useresp = cpu->useresp;
+            ctx->ss = cpu->ss;
+        }
 
         if (current->state == RUNNING)
             current->state = READY;
     }
+
+    purgeProcesses();
 
     // Change to actually switch
     Proc* next = nullptr;
@@ -87,11 +91,10 @@ void Scheduler::switchTask(CPUStatus *cpu) {
 
     if (next && next->state == READY) {
         next->state = RUNNING;
-        switchTo(current, next);
+        switchTo(next);
     }
 
     asm volatile("sti");
-    printf("No processes ready\n");
     while (1) { asm volatile("hlt"); }
 }
 
@@ -102,9 +105,20 @@ void Scheduler::timer(CPUStatus* status) {
         switchTask(status);
 }
 
+void Scheduler::purgeProcesses() {
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        Proc* proc = s_processes[i];
+
+        if (proc != current && (proc->state == KILLED || proc->state == EXITED)) {
+            Proc::freeProcess(proc);
+            s_processes[i] = nullptr;
+        }
+    }
+}
+
 extern "C" void __attribute__((naked)) usermode(CPUContext* ctx);
 
-void Scheduler::switchTo(Proc* prev, Proc* next) {
+void Scheduler::switchTo(Proc* next) {
     if (!next) return;
 
     if (next->pd)
