@@ -1,4 +1,4 @@
-#include "exec/elfloader.h"
+#include "exec/pid.h"
 #include "exec/process.h"
 #include "fs/fat32.h"
 #include "drivers/text.h"
@@ -11,12 +11,9 @@
 #include "x86/memory/pageHeap.h"
 #include "x86/memory/paging.h"
 #include "x86/pic.h"
-#include "x86/irq.h"
 #include "drivers/keyboard.h"
 #include "drivers/ide.h"
 #include <file.h>
-#include <string.h>
-#include <stdio.h>
 #include "debug.h"
 #include "syscall/syscall.h"
 
@@ -40,6 +37,7 @@ extern "C" void kernel_main() {
     VFS::mount(&FAT32VFS::FAT32Ops, 0, "/");
     VFS::mount(&RamFS::RAMFSOps, 0, "/proc");
 
+    DO_INIT("Initialising PID", PID::init());
     DO_INIT("Initialising Scheduler", Scheduler::init());
     DO_INIT("Initialising Syscalls", Syscall::init());
 
