@@ -64,8 +64,10 @@ int RamFS::lookup(inode* dir, const char* name, inode** out) {
 }
 
 int RamFS::read(inode* node, void* buffer, size_t offset, size_t size) {
-    // TODO: Set a error bit somewhere
-    if (!node) return 0;
+    if (!node) {
+        s_error = E_INVAL;
+        return 0;
+    }
 
     ramFSNode* fsNode = (ramFSNode*)node->fsData;
     
@@ -80,8 +82,10 @@ int RamFS::read(inode* node, void* buffer, size_t offset, size_t size) {
 }
 
 int RamFS::write(inode* node, const void* buffer, size_t offset, size_t size) {
-    // TODO: Set a error bit somewhere
-    if (!node) return 0;
+    if (!node) {
+        s_error = E_INVAL;
+        return 0;
+    }
 
     ramFSNode* fsNode = (ramFSNode*)node->fsData;
 
@@ -139,7 +143,7 @@ void RamFS::destroy(inode* node) {
     delete node;
 }
 
-void RamFS::deleteE(inode* node) {
+void RamFS::deleteE(inode* dir, inode* node) {
 
 }
 

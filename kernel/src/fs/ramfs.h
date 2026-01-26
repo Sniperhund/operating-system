@@ -16,7 +16,7 @@ private:
     static int write(inode* node, const void* buffer, size_t offset, size_t size);
     static int readdir(inode* dir, size_t index, inode** out);
     static void destroy(inode* node);
-    static void deleteE(inode* node);
+    static void deleteE(inode* dir, inode* node);
     static int create(inode* dir, const char* name, inode** out, bool isDir);
 
     struct ramFSNode {

@@ -11,8 +11,8 @@ struct FSOps {
     int (*read)(inode* node, void* buffer, size_t offset, size_t size);
     int (*write)(inode* node, const void* buffer, size_t offset, size_t size);
     int (*readdir)(inode* dir, size_t index, inode** out);
-    void (*destroy)(inode*);
-    void (*deleteE)(inode*);
+    void (*destroy)(inode* node);
+    void (*deleteE)(inode* dir, inode* node);
     int (*create)(inode* dir, const char* name, inode** out, bool isDir);
 };
 
