@@ -15,6 +15,8 @@ public:
 
     static void switchTask(CPUStatus* cpu);
 
+    static Proc* getByPid(pid_t pid);
+
 private:
     static constexpr uint32_t MAX_PROCESSES = 32;
 

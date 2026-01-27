@@ -79,6 +79,7 @@ void Scheduler::switchTask(CPUStatus *cpu) {
     Proc* next = nullptr;
     uint32_t attempts = 0;
 
+    // TODO: Make it handle fragmented processes in array, if they get purged
     while (attempts < s_processCount) {
         currentProc = (currentProc + 1) % s_processCount;
         next = s_processes[currentProc];
@@ -98,6 +99,16 @@ void Scheduler::switchTask(CPUStatus *cpu) {
     while (1) { asm volatile("hlt"); }
 }
 
+Proc* Scheduler::getByPid(pid_t pid) {
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        Proc* proc = s_processes[i];
+
+        if (proc && proc->pid == pid) return proc;
+    }
+
+    return nullptr;
+}
+
 void Scheduler::timer(CPUStatus* status) {
     s_time++;
 
@@ -112,6 +123,7 @@ void Scheduler::purgeProcesses() {
         if (proc != current && (proc->state == KILLED || proc->state == EXITED)) {
             Proc::freeProcess(proc);
             s_processes[i] = nullptr;
+            s_processCount--;
         }
     }
 }

@@ -3,6 +3,7 @@
 #include "stdarg.h"
 
 int printf(const char* format, ...);
+int sprintf(char* s, const char* format, ...);
 
 /**
   * Format a string with the following specifiers:

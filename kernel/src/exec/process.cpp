@@ -38,6 +38,19 @@ int Proc::removeFd(size_t fd) {
     return 0;
 }
 
+const char* Proc::stateString() {
+    switch (state) {
+        case RUNNING: return "RUNNING";
+        case READY: return "READY";
+        case BLOCKED: return "BLOCKED";
+        case NEW: return "NEW";
+        case KILLED: return "KILLED";
+        case EXITED: return "EXITED";
+    }
+
+    return "UNDEFINED";
+}
+
 Proc* Proc::createProcess() {
     Proc* proc = (Proc*)Heap::alloc(sizeof(Proc));
     memset(proc, 0, sizeof(Proc));

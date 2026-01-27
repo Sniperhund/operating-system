@@ -19,6 +19,17 @@ int printf(const char* format, ...) {
     return ret;
 }
 
+int sprintf(char* s, const char* format, ...) {
+    va_list arg;
+    va_start(arg, format);
+
+    int ret = vsprintf(s, format, arg);
+
+    va_end(arg);
+
+    return ret;
+}
+
 // Very illegal macro, but I don't care
 #define PRINT_BUFFER for (int j = 0; j < len; j++) s[k++] = buffer[j]
 

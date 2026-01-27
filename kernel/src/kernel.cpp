@@ -2,7 +2,7 @@
 #include "exec/process.h"
 #include "fs/fat32.h"
 #include "drivers/text.h"
-#include "fs/ramfs.h"
+#include "fs/procfs.h"
 #include "fs/vfs.h"
 #include "sched/scheduler.h"
 #include "x86/gdt.h"
@@ -35,7 +35,9 @@ extern "C" void kernel_main() {
 
     // Move to init process
     VFS::mount(&FAT32VFS::FAT32Ops, 0, "/");
-    VFS::mount(&RamFS::RAMFSOps, 0, "/proc");
+    VFS::mount(&ProcFS::ProcFSOps, 0, "/proc");
+
+    inode* file;
 
     DO_INIT("Initialising PID", PID::init());
     DO_INIT("Initialising Scheduler", Scheduler::init());
@@ -43,6 +45,17 @@ extern "C" void kernel_main() {
 
     // Test program
     exec("/test.elf", "");
-    //exec("/hello-1.elf", "");
+    exec("/test.elf", "");
+
+    VFS::resolve("/proc/3/status", &file);
+    printf("0x%p\n", file);
+    char buf[512];
+
+    VFS::read(file, buf, 0, sizeof(buf));
+
+    printf("Buffer: %s\n", buf);
+
+    return;
+
     Scheduler::run();
 }

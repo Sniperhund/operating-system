@@ -44,6 +44,8 @@ struct Proc {
     int addFd(inode* file);
     int removeFd(size_t fd);
 
+    const char* stateString();
+
     static Proc* createProcess();
     static void freeProcess(Proc* proc);
 };

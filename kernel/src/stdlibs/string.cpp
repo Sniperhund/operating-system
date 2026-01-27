@@ -155,7 +155,7 @@ int strcmp(const char* lhs, const char* rhs) {
     int lhsLen = strlen(lhs);
     int rhsLen = strlen(rhs);
 
-    int len = lhsLen >= rhsLen ? lhsLen : rhsLen;
+    int len = lhsLen < rhsLen ? lhsLen : rhsLen;
 
     return strncmp(lhs, rhs, len);
 }
