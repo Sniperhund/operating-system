@@ -1,6 +1,6 @@
 # Source directories
-LIBC_SRC := .
-LIBC_INCLUDE := $(LIBC_SRC)/include
+LIBC_SRC := ./src
+LIBC_INCLUDE := ./include
 
 # Output directories
 BUILD_DIR := build

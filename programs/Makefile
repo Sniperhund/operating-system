@@ -5,6 +5,8 @@ ROOT     := $(CURDIR)
 OUT      := $(ROOT)/binaries
 SYSROOT  := $(ROOT)/sysroot
 LIBC_SRC := $(ROOT)/../libc
+LIBC_BUILD := $(LIBC_SRC)/build/lib/libc.a
+LIBC_A := $(SYSROOT)/lib/libc.a
 
 CFLAGS := \
 	-ffreestanding \
@@ -22,21 +24,22 @@ ALL_DIRS := $(ALL_DIRS:/=)
 PROGRAM_DIRS := $(filter-out sysroot binaries,$(ALL_DIRS))
 ELFS := $(PROGRAM_DIRS:%=$(OUT)/%.elf)
 
-all: sysroot $(ELFS)
+$(LIBC_BUILD):
+	@echo "[*] Building libc..."
+	$(MAKE) -C $(LIBC_SRC)
 
-sysroot:
+$(LIBC_A): $(LIBC_BUILD)
 	@echo "[*] Installing libc into sysroot"
-	rm -rf $(SYSROOT)
 	mkdir -p $(SYSROOT)/include $(SYSROOT)/lib
 	cp -r $(LIBC_SRC)/include/* $(SYSROOT)/include/
-	cp $(LIBC_SRC)/build/lib/libc.a $(SYSROOT)/lib/
+	cp $(LIBC_BUILD) $(SYSROOT)/lib/
 
-$(OUT)/%.elf: %/main.c
+$(OUT)/%.elf: %/main.c $(LIBC_A)
 	@echo "[*] Building $*"
 	mkdir -p $(OUT)
 	$(CC) $(CFLAGS) $(LDFLAGS) $< $(SYSROOT)/lib/libc.a -o $@
 
-all: sysroot $(ELFS)
+all: $(ELFS)
 
 clean:
 	rm -rf $(OUT) $(SYSROOT)
