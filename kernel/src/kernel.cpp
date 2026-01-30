@@ -44,8 +44,7 @@ extern "C" void kernel_main() {
     DO_INIT("Initialising Syscalls", Syscall::init());
 
     // Test program
-    exec("/test.elf", "");
-    exec("/test.elf", "");
+    exec("/bin/test.elf", "");
 
     VFS::resolve("/proc/3/status", &file);
     printf("0x%p\n", file);
@@ -54,8 +53,6 @@ extern "C" void kernel_main() {
     VFS::read(file, buf, 0, sizeof(buf));
 
     printf("Buffer: %s\n", buf);
-
-    return;
 
     Scheduler::run();
 }

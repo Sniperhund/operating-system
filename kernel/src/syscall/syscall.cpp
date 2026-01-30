@@ -25,6 +25,8 @@ extern "C" void syscallHandlerC(CPUStatus* s) {
         PANIC("Syscall", "Syscall not found");
     }
 
+    printf("Syscall %d called\n", s->eax);
+
     int ret = Syscall::s_routines[s->eax](s);
 
     // Return value to userspace
