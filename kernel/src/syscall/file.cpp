@@ -4,27 +4,29 @@
 #include "syscall.h"
 #include "stdio.h"
 
-uint32_t Syscall::read(CPUStatus* s) {
+int Syscall::read(CPUStatus* s) {
 
 }
 
-uint32_t Syscall::write(CPUStatus* s) {
+int Syscall::write(CPUStatus* s) {
 
 }
 
-uint32_t Syscall::open(CPUStatus* s) {
+int Syscall::open(CPUStatus* s) {
     inode* file = VFS::open((const char*)s->ebx, (uint32_t)s->ecx);
     if (!file) {
-        return E_NOENT;
+        return -E_NOENT;
     }
 
     int fd = current->addFd(file);
     if (fd == -1) {
-        return E_MFILE;
+        return -E_MFILE;
     }
+
+    printf("Returning fd: %d\n", fd);
 
     return fd;
 }
 
-uint32_t Syscall::close(CPUStatus* s) {
+int Syscall::close(CPUStatus* s) {
 }

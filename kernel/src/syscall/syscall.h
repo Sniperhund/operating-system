@@ -12,18 +12,18 @@ public:
 private:
     friend void ::syscallHandlerC(CPUStatus*);
     
-    typedef uint32_t (*func) (CPUStatus*);
+    typedef int (*func) (CPUStatus*);
 
     static constexpr uint32_t MAX_SYSCALLS = 16;
 
     static func s_routines[MAX_SYSCALLS];
 
     // File
-    static uint32_t read(CPUStatus* s);
-    static uint32_t write(CPUStatus* s);
-    static uint32_t open(CPUStatus* s);
-    static uint32_t close(CPUStatus* s);
+    static int read(CPUStatus* s);
+    static int write(CPUStatus* s);
+    static int open(CPUStatus* s);
+    static int close(CPUStatus* s);
 
     // Process
-    static uint32_t exit(CPUStatus* s);
+    static int exit(CPUStatus* s);
 };

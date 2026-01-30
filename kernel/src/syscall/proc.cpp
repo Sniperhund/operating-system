@@ -1,11 +1,14 @@
 #include "syscall.h"
 
 #include "sched/scheduler.h"
-#include "stdio.h"
+#include <stdio.h>
 
-uint32_t Syscall::exit(CPUStatus* s) {
-    current->exitCode = s->eax;
+int Syscall::exit(CPUStatus* s) {
+    current->exitCode = s->ebx;
     current->state = EXITED;
+
+    printf("Process exited with: %d\n", current->exitCode);
+
     Scheduler::switchTask(s);
 
     return 0;
