@@ -24,7 +24,7 @@ uint8_t ELFLoader::loadExecutable(void* file, uint32_t* entry) {
         uint32_t diff = ph[i].vaddr - vaddr;
         uint32_t size = PAGE_ALIGNUP(ph[i].memSize + diff);
 
-        for (uint32_t j = 0; j < size; j += PAGE_SIZE) {
+        for (uint32_t j = 0; j < size + PAGE_SIZE; j += PAGE_SIZE) {
             mmap((void*)(vaddr + j), PAGE_SIZE, PROT_WRITE);
         }
 
