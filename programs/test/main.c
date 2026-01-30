@@ -1,8 +1,12 @@
 #include "stdint.h"
 #include "stdio.h"
+#include <unistd.h>
 
 void _start() {
-    fopen("", 0);
+    int ret = fopen("/test.txt", 0);
 
-    asm volatile("mov $4, %eax; int $0x80");
+    if (ret == -1) exit(255);
+    exit(ret);
+
+    exit(0);
 }
