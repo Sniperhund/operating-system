@@ -12,8 +12,8 @@ int VFS::init() {
 
 int VFS::mount(FSOps *fs, uint8_t drive, const char *path) {
     inode* root;
-    if (fs->mount((void*)(uintptr_t)drive, &root) != 0) return E_MOUNTNPOS;
-    if (mountCount >= MAX_MOUNTS) return E_MOUNTNPOS;
+    if (fs->mount((void*)(uintptr_t)drive, &root) != 0) return -E_MOUNTNPOS;
+    if (mountCount >= MAX_MOUNTS) return -E_MOUNTNPOS;
 
     mounts[mountCount++] = {
         path,
@@ -54,7 +54,7 @@ int VFS::resolve(const char *path, inode **out) {
         }
     }
 
-    if (!current) return E_NOENT;
+    if (!current) return -E_NOENT;
 
     path += bestLen;
     while (*path == '/') path++;
@@ -65,7 +65,7 @@ int VFS::resolve(const char *path, inode **out) {
         while (path[len] && path[len] != '/') name[len++] = path[len];
         name[len] = 0;
 
-        if (current->type != inode::INODE_DIR) return E_NOTDIR;
+        if (current->type != inode::INODE_DIR) return -E_NOTDIR;
 
         inode* next;
         if (!current->fs || current->fs->lookup(current, name, &next) != 0) return 1;
@@ -79,19 +79,19 @@ int VFS::resolve(const char *path, inode **out) {
 }
 
 size_t VFS::read(inode* node, void* buffer, size_t offset, size_t size) {
-    if (!node || !buffer) return 0;
+    if (!node || !buffer) return -E_INVAL;
 
-    if (node->type != inode::INODE_FILE) return 0;
-    if (!node->fs || !node->fs->read) return 0;
+    if (node->type != inode::INODE_FILE) return -E_NOENT;
+    if (!node->fs || !node->fs->read) return -E_NI;
 
     return node->fs->read(node, buffer, offset, size);
 }
 
 size_t VFS::write(inode *node, void *buffer, size_t offset, size_t size) {
-    if (!node || !buffer) return 0;
+    if (!node || !buffer) return -E_INVAL;
 
-    if (node->type != inode::INODE_FILE) return 0;
-    if (!node->fs || !node->fs->write) return 0;
+    if (node->type != inode::INODE_FILE) return -E_NOENT;
+    if (!node->fs || !node->fs->write) return -E_NI;
 
     return node->fs->write(node, buffer, offset, size);
 }

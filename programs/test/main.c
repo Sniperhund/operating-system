@@ -6,7 +6,10 @@ void _start() {
     int ret = fopen("/test.txt", 0);
 
     if (ret == -1) exit(255);
-    exit(ret);
+
+    char buffer[6] = {0};
+    fread(ret, (void*)buffer, 5, 0);
+    
 
     exit(0);
 }

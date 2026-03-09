@@ -16,7 +16,7 @@ uint32_t Bitmap::init(size_t size) {
     m_bitmap = (uint32_t*)Heap::alloc(size / BITS_PER_WORD);
 
     if (!m_bitmap)
-        return E_NOMEM;
+        return -E_NOMEM;
     
     m_size = size;
 

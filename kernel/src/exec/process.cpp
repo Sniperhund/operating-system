@@ -27,7 +27,7 @@ int Proc::addFd(inode* file) {
 }
 
 int Proc::removeFd(size_t fd) {
-    if (files.maxFd >= fd || !files.fds[fd]) return E_MFILE;
+    if (files.maxFd >= fd || !files.fds[fd]) return -E_MFILE;
 
     files.fds[fd] = nullptr;
     if (fd == files.maxFd) {

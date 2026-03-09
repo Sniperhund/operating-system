@@ -39,7 +39,7 @@ int ProcFS::lookup(inode* dir, const char* name, inode** out) {
         pid_t pid = atoi(name);
         if (pid > 0) {
             Proc* proc = Scheduler::getByPid(pid);
-            if (!proc) return E_NOENT;
+            if (!proc) return -E_NOENT;
 
             inode* node = new inode;
             node->type = inode::INODE_DIR;
@@ -71,7 +71,7 @@ int ProcFS::lookup(inode* dir, const char* name, inode** out) {
         }
     }
 
-    return E_NOENT;
+    return -E_NOENT;
 }
 
 int ProcFS::read(inode* node, void* buffer, size_t offset, size_t size) {

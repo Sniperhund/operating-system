@@ -37,7 +37,7 @@ int Paging::init() {
     // PD have 4KiB of x86 PD and 4KiB of ref tables (Just pointer to the first 4KiB tables)
     s_kernelDir = (PD*)PageHeap::allocPage(2);
 
-    if (s_kernelDir == nullptr) return E_NOMEM;
+    if (s_kernelDir == nullptr) return -E_NOMEM;
 
     uint32_t frame = PMM::physToFrame((void*)((uintptr_t)s_kernelDir - LOAD_MEMORY_ADDRESS));
     PMM::mark(frame);
@@ -107,7 +107,7 @@ int Paging::mappage(void *vDir, void *virt, size_t frame, uint8_t prot) {
     if (!table) {
         table = (PT*)(PD*)PageHeap::allocPage();
 
-        if (table == nullptr) return E_NOMEM; 
+        if (table == nullptr) return -E_NOMEM; 
 
         uint32_t ptFrame = PMM::physToFrame((void*)((uintptr_t)table - LOAD_MEMORY_ADDRESS));
 
@@ -127,7 +127,7 @@ int Paging::mappage(void *vDir, void *virt, size_t frame, uint8_t prot) {
         else {
             void* ptr = (PD*)PageHeap::allocPage();
 
-            if (ptr == nullptr) return E_NOMEM;
+            if (ptr == nullptr) return -E_NOMEM;
 
             uint32_t ptFrame = PMM::physToFrame((void*)((uintptr_t)ptr - LOAD_MEMORY_ADDRESS));
             table->pages[ptIdx].frame = ptFrame;
@@ -139,7 +139,7 @@ int Paging::mappage(void *vDir, void *virt, size_t frame, uint8_t prot) {
         table->pages[ptIdx].rw = (prot & PROT_WRITE) ? 1 : 0;
         table->pages[ptIdx].user = (prot & PROT_KERNEL) ? 0 : 1;
     } else {
-        return E_INVAL;
+        return -E_INVAL;
     }
 
     asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
@@ -150,7 +150,7 @@ int Paging::mappage(void *vDir, void *virt, size_t frame, uint8_t prot) {
 int Paging::unmappage(void *vDir, void *virt) {
     if ((uintptr_t)virt >= LOAD_MEMORY_ADDRESS) {
         printf("Process attempted to ummap kernel memory at 0x%x! Killing process.\n", virt);
-        return E_KILL;
+        return -E_KILL;
     }
 
     if (!vDir) vDir = s_kernelDir;
@@ -159,7 +159,7 @@ int Paging::unmappage(void *vDir, void *virt) {
     uint32_t pdIdx = PD_INDEX(virt), ptIdx = PT_INDEX(virt);
     PT* table = dir->refTables[pdIdx];
 
-    if (!table || !table->pages[ptIdx].present) return E_INVAL;
+    if (!table || !table->pages[ptIdx].present) return -E_INVAL;
         
     PMM::unmark(table->pages[ptIdx].frame);
     table->pages[ptIdx].present = 0;
@@ -173,8 +173,7 @@ Paging::PD* Paging::createPD() {
     PD* pd = (PD*)PageHeap::allocPage(2);
 
     if (!pd) {
-        s_error = E_NOMEM;
-        return nullptr;
+        return (PD*)-E_NOMEM;
     }
 
     uint32_t frame = PMM::physToFrame((void*)((uintptr_t)pd - LOAD_MEMORY_ADDRESS));
@@ -263,8 +262,7 @@ void* mmap(void* addr, size_t length, uint8_t prot) {
 
 void* mmap(void* dir, void* addr, size_t length, uint8_t prot) {
     if (!addr) {
-        s_error = E_INVAL;
-        return nullptr;
+        return (void*)-E_INVAL;
     }
 
     length = PAGE_ALIGNUP(length);
@@ -277,8 +275,7 @@ void* mmap(void* dir, void* addr, size_t length, uint8_t prot) {
         if (result) {
             // Clean up after ourselves since it failed.
             if (i != 0) munmap(dir, addr, i);
-            s_error = result;
-            return (void*)-1;
+            return (void*)-E_NOMEM;
         }
     }
 
@@ -290,7 +287,7 @@ int munmap(void* addr, size_t length) {
 }
 
 int munmap(void *dir, void *addr, size_t length) {
-    if (!addr) return E_INVAL;
+    if (!addr) return -E_INVAL;
 
     length = PAGE_ALIGNUP(length);
 

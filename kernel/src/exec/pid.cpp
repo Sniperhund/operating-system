@@ -32,7 +32,7 @@ pid_t PID::allocate() {
 
         pid++;
         if (pid > MAX_PID) pid = 2;
-        if (pid == start) return E_PID;
+        if (pid == start) return -E_PID;
     }
 }
 

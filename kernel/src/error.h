@@ -2,8 +2,6 @@
 
 #include "stdint.h"
 
-static uint8_t s_error = 0;
-
 #define E_KILL      255 /* The kernel should immediately kill the offending process */
 
 #define E_NOENT     1   /* No such file or directory */
@@ -15,3 +13,4 @@ static uint8_t s_error = 0;
 #define E_NOMEM     7   /* Cannot allocate memory */
 #define E_MFILE     8   /* Too many open files */
 #define E_PID       9   /* Cannot allocate pid */
+#define E_NI        10  /* Not implemented */

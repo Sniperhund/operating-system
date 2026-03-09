@@ -1,5 +1,6 @@
 #include "exec/pid.h"
 #include "exec/process.h"
+#include "fs/consolefs.h"
 #include "fs/fat32.h"
 #include "drivers/text.h"
 #include "fs/procfs.h"
@@ -20,7 +21,7 @@
 extern char kernel_end[];
 
 extern "C" void kernel_main() {
-    Text::setColor(Text::BLACK, Text::LIGHT_BLUE);
+    Text::setColor(Text::GRAY, Text::BLACK);
     Text::init();
 
     DO_INIT("Initializing GDT", GDT::init(true));
@@ -36,6 +37,7 @@ extern "C" void kernel_main() {
     // Move to init process
     VFS::mount(&FAT32VFS::FAT32Ops, 0, "/");
     VFS::mount(&ProcFS::ProcFSOps, 0, "/proc");
+    VFS::mount(&ConsoleFS::ConsoleFSOps, 0, "/dev");
 
     inode* file;
 
