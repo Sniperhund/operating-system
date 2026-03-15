@@ -13,6 +13,9 @@ int utoa(unsigned int value, char *buffer, int base);
 size_t strlen(const char* start);
 char* strrev(char* str);
 char* strcpy(char* dest, const char* src);
+/**
+ * Null terminates at string end of src, even if count is longer.
+ */
 char* strncpy(char* dest, const char* src, size_t count);
 int strcmp(const char* lhs, const char* rhs);
 int strncmp(const char* lhs, const char* rhs, size_t count);

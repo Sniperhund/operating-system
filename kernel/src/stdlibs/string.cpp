@@ -141,12 +141,17 @@ char* strcpy(char* dest, const char* src) {
     int len = strlen(src);
 
     memmove(dest, src, len);
+    dest[len] = 0;
 
     return dest;
 }
 
 char* strncpy(char* dest, const char* src, size_t count) {
-    memmove(dest, src, count);
+    size_t len = strlen(src);
+    size_t toCopy = len < count ? len : count;
+
+    memmove(dest, src, toCopy);
+    dest[toCopy] = 0;
 
     return dest;
 }
