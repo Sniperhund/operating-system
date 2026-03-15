@@ -9,7 +9,9 @@ LIBC_BUILD := $(LIBC_SRC)/build/lib/libc.a
 LIBC_A := $(SYSROOT)/lib/libc.a
 
 CFLAGS := \
+	-g \
 	-ffreestanding \
+	-fno-omit-frame-pointer \
 	-fno-builtin \
 	-fno-stack-protector \
 	-nostdlib \

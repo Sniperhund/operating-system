@@ -13,4 +13,8 @@ cp --remove-destination -r ./programs/binaries/* /mnt/mydisk/bin/
 rm -rf ./programs/binaries
 sync
 
-(cd kernel && make run)
+if [ "$1" == "--debug" ]; then
+    (cd kernel && make run-debug)
+else
+    (cd kernel && make run)
+fi
