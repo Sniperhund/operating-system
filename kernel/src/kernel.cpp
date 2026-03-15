@@ -47,14 +47,6 @@ extern "C" void kernel_main() {
 
     // Test program
     exec("/bin/test.elf", "");
-
-    VFS::resolve("/proc/3/status", &file);
-    printf("0x%p\n", file);
-    char buf[512];
-
-    VFS::read(file, buf, 0, sizeof(buf));
-
-    printf("Buffer: %s\n", buf);
-
+    
     Scheduler::run();
 }

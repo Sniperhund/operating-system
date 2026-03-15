@@ -77,8 +77,6 @@ int ConsoleFS::read(inode* node, void* buffer, size_t offset, size_t size) {
 }
 
 int ConsoleFS::write(inode* node, const void* buffer, size_t offset, size_t size) {
-    printf("ConsoleFS");
-    
     ConsoleNode* conNode = (ConsoleNode*)node->fsData;
 
     if (conNode->type != ConsoleNodeType::CON_OUT && conNode->type != ConsoleNodeType::CON_ERR) return -E_INVAL;

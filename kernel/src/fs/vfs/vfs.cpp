@@ -90,7 +90,7 @@ size_t VFS::read(inode* node, void* buffer, size_t offset, size_t size) {
 size_t VFS::write(inode *node, void *buffer, size_t offset, size_t size) {
     if (!node || !buffer) return -E_INVAL;
 
-    if (node->type != inode::INODE_FILE) return -E_NOENT;
+    if (node->type == inode::INODE_DIR) return -E_NOENT;
     if (!node->fs || !node->fs->write) return -E_NI;
 
     return node->fs->write(node, buffer, offset, size);
