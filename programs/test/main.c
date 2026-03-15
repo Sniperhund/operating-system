@@ -9,7 +9,8 @@ void _start() {
 
     char buffer[6] = {0};
     fread(ret, (void*)buffer, 5, 0);
-    
+    buffer[5] = 0;
+    fwrite(0, buffer, 6, 0);
 
     exit(0);
 }

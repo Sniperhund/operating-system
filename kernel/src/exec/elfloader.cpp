@@ -2,6 +2,7 @@
 #include "x86/memory/paging.h"
 #include "x86/memory/pmm.h"
 #include <string.h>
+#include <stdio.h>
 
 #define ELF_ARCH_X86        (1)
 #define ELF_LITTLE_ENDIAN   (1)
@@ -23,6 +24,8 @@ uint8_t ELFLoader::loadExecutable(void* file, uint32_t* entry) {
         uint32_t vaddr = ph[i].vaddr & 0xFFFFF000;
         uint32_t diff = ph[i].vaddr - vaddr;
         uint32_t size = PAGE_ALIGNUP(ph[i].memSize + diff);
+
+        printf("[DEBUG] Program loaded at: 0x%x\n", vaddr);
 
         for (uint32_t j = 0; j < size + PAGE_SIZE; j += PAGE_SIZE) {
             mmap((void*)(vaddr + j), PAGE_SIZE, PROT_WRITE);
