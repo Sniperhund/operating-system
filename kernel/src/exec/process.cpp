@@ -59,7 +59,17 @@ Proc* Proc::createProcess() {
     proc->pid = PID::allocate();
     proc->pd = Paging::createPD();
 
-    if (!proc->pd) return nullptr;
+    inode* stdout = VFS::open("/dev/stdout", 0);
+    if (!stdout) return (Proc*)-E_PROC;
+
+    proc->files.fds[0] = stdout;
+
+    inode* stderr = VFS::open("/dev/stderr", 0);
+    if (!stderr) return (Proc*)-E_PROC;
+
+    proc->files.fds[1] = stderr;
+
+    if (!proc->pd) return (Proc*)-E_NOMEM;
 
     return proc;
 }
@@ -79,7 +89,8 @@ void exec(const char *cmd, const char *args) {
     // Start by getting a process, that has state to "NEW"
     Proc* proc = Proc::createProcess();
 
-    if (!proc->pd) PANIC("PROCESS", "Page Directory couldn't be allocated");
+    if ((intptr_t)proc == -E_NOMEM) PANIC("PROCESS", "Page Directory couldn't be allocated");
+    if ((intptr_t)proc == -E_PROC) PANIC("PROCESS", "Couldn't open stdout or stderr");
 
     proc->kstack = (void*)((uintptr_t)Heap::alloc(KERNEL_STACK_SIZE) + KERNEL_STACK_SIZE);
 

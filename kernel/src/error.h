@@ -14,3 +14,4 @@
 #define E_MFILE     8   /* Too many open files */
 #define E_PID       9   /* Cannot allocate pid */
 #define E_NI        10  /* Not implemented */
+#define E_PROC      11  /* Couldn't create process */

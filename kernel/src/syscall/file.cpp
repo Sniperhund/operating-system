@@ -29,8 +29,6 @@ int Syscall::open(CPUStatus* s) {
     int fd = current->addFd(file);
     if (fd == -1) return -E_MFILE;
 
-    printf("Returning fd: %d\n", fd);
-
     return fd;
 }
 
