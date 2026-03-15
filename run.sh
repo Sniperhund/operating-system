@@ -10,7 +10,6 @@ fi
 
 echo "Moving binaries..."
 cp --remove-destination -r ./programs/binaries/* /mnt/mydisk/bin/
-rm -rf ./programs/binaries
 sync
 
 if [ "$1" == "--debug" ]; then

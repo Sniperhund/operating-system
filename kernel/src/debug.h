@@ -8,3 +8,5 @@
     } while (0)
 
 #define BOCHS_BREAK asm volatile ("xchgw %bx, %bx");
+
+__attribute__((noinline)) void loadDebugSymbols(const char* path, unsigned int textBase);

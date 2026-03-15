@@ -1,4 +1,5 @@
 #include "process.h"
+#include "debug.h"
 #include "exec/elfloader.h"
 #include "exec/pid.h"
 #include "fs/vfs.h"
@@ -109,6 +110,7 @@ void exec(const char *cmd, const char *args) {
     VFS::read(file, buffer, 0, file->size);
 
     ELFLoader::loadExecutable(buffer, &proc->ctx.eip);
+    loadDebugSymbols(cmd, proc->ctx.eip);
 
     Heap::free(buffer);
 
