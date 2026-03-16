@@ -17,10 +17,12 @@ private:
         size_t size;
         bool used;
         Header* next;
+        uint32_t magic;
     };
 
     static Header* s_start;
     static uintptr_t s_end;
 
     static constexpr size_t MIN_BLOCK_SIZE = sizeof(Header) + 8;
+    static constexpr uint32_t MAGIC = 0xDEADBEEF;
 };

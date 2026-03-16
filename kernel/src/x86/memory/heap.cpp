@@ -1,6 +1,8 @@
 #include "heap.h"
 #include "panic.h"
+#include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 Heap::Header* Heap::s_start = nullptr;
 uintptr_t Heap::s_end = 0;
@@ -18,6 +20,7 @@ int Heap::init(void *start, size_t size) {
     s_start->size = size - sizeof(Header);
     s_start->next = nullptr;
     s_start->used = false;
+    s_start->magic = MAGIC;
 
     s_end = (uintptr_t)start + size;
 
@@ -39,10 +42,12 @@ void* Heap::alloc(size_t payloadSize) {
             nextBlock->size = current->size - payloadSize - sizeof(Header);
             nextBlock->next = current->next;
             nextBlock->used = false;
+            nextBlock->magic = MAGIC;
 
             current->size = payloadSize;
             current->next = nextBlock;
             current->used = true;
+            current->magic = MAGIC;
 
             return GET_BLOCK(current);
         }
@@ -68,24 +73,52 @@ void* Heap::allocAligned(size_t payloadSize, size_t alignment) {
 
     Header* current = s_start;
     while (current && (uintptr_t)current < s_end) {
-        uintptr_t aligned = ((uintptr_t)current + alignment - 1) & ~(alignment - 1);
-        size_t paddingRequired = aligned - (uintptr_t)current;
-        size_t paddedPayloadSize = paddingRequired + payloadSize;
+        if (current->used) {
+            current = current->next;
+            continue;
+        }
 
-        if (!current->used && current->size >= paddedPayloadSize + MIN_BLOCK_SIZE) {
-            Header* nextBlock = (Header*)((uintptr_t)current + sizeof(Header) + paddedPayloadSize);
+        uintptr_t rawStart = (uintptr_t)current + sizeof(Header);
+        uintptr_t aligned = (rawStart + alignment - 1) & ~(alignment - 1);
+        uintptr_t alignedHeaderAddr = aligned - sizeof(Header);
 
-            nextBlock->size = current->size - paddedPayloadSize - sizeof(Header);
-            nextBlock->next = current->next;
-            nextBlock->used = false;
+        size_t prefixSize = alignedHeaderAddr - (uintptr_t)current;
+        size_t totalNeeded = prefixSize + sizeof(Header) + payloadSize;
 
-            current->size = paddedPayloadSize;
-            current->next = nextBlock;
-            current->used = true;
+        if (current->size >= totalNeeded) {
+            Header* alignedHeader = (Header*)alignedHeaderAddr;
 
-            // NOTE: This may be a problem later if a header is aligns perfectly with alignment
-            //       Then it may return the header instead of the block
-            return (void*)aligned;
+            size_t remaining = current->size + sizeof(Header) - totalNeeded;
+
+            if (prefixSize >= MIN_BLOCK_SIZE) {
+                current->size = prefixSize - sizeof(Header);
+
+                Header* prefixNext = alignedHeader;
+                current->next = prefixNext;
+            } else {
+                alignedHeader = current;
+                prefixSize = 0;
+            }
+
+            alignedHeader->size = payloadSize;
+            alignedHeader->used = true;
+            alignedHeader->magic = MAGIC;
+
+            uintptr_t endOfAlloc = (uintptr_t)alignedHeader + sizeof(Header) + payloadSize;
+            Header* suffix = (Header*)endOfAlloc;
+
+            if (remaining >= MIN_BLOCK_SIZE) {
+                suffix->size = remaining - sizeof(Header);
+                suffix->used = false;
+                suffix->magic = MAGIC;
+                suffix->next = current->next;
+
+                alignedHeader->next = suffix;
+            } else {
+                alignedHeader->next = current->next;
+            }
+
+            return GET_BLOCK(alignedHeader);
         }
 
         if (current->next == nullptr) break;
@@ -93,13 +126,39 @@ void* Heap::allocAligned(size_t payloadSize, size_t alignment) {
         current = current->next;
     }
 
-    PANIC("Heap", "Couldn't allocate block");
+    PANIC("Heap", "Couldn't allocate aligned block");
     return nullptr;
 }
 
 void Heap::free(void *ptr) {
     Header* header = GET_HEADER(ptr);
 
+    printf("Freeing: 0x%p\n", header);
+
+    header->used = false;
+
+    Header* current = s_start;
+
+    while (current && (uintptr_t)current < s_end) {
+        if (current->next == nullptr) break;
+
+        Header* next = (Header*)current->next;
+
+        if ((uintptr_t)next >= s_end) break;
+        if (next->magic != MAGIC) PANIC("Heap", "Header doesn't have magic number");
+
+        if (next == header) {
+            if (current->used) break;
+
+            current->size = GET_FULL_BLOCK_SIZE(header->size) + current->size;
+            current->next = header->next;
+            memset(header, 0, sizeof(Header));
+
+            break;
+        }
+
+        current = next;
+    }
 }
 
 void* Heap::realloc(void *ptr, size_t payloadSize) {

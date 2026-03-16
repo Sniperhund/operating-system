@@ -39,8 +39,6 @@ extern "C" void kernel_main() {
     VFS::mount(&ProcFS::ProcFSOps, 0, "/proc");
     VFS::mount(&ConsoleFS::ConsoleFSOps, 0, "/dev");
 
-    inode* file;
-
     DO_INIT("Initialising PID", PID::init());
     DO_INIT("Initialising Scheduler", Scheduler::init());
     DO_INIT("Initialising Syscalls", Syscall::init());
