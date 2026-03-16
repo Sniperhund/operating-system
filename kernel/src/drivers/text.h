@@ -29,6 +29,9 @@ public:
     static void setColor(Color fg, Color bg);
     static void clear();
 
+    static void putcAt(char c, uint8_t col, uint8_t row);
+    static void putsAt(const char* str, uint8_t col, uint8_t row);
+
 private:
     static void newLine();
 

@@ -1,4 +1,5 @@
 #include "heap.h"
+#include "drivers/text.h"
 #include "panic.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -6,6 +7,8 @@
 
 Heap::Header* Heap::s_start = nullptr;
 uintptr_t Heap::s_end = 0;
+bool Heap::s_debug = false;
+Heap::DebugInfo Heap::s_debugInfo = {0, 0, 0};
 
 /**
  * Only int 0x80 (syscalls) use the heap for now, so it's unnecessary to use `cli`
@@ -14,7 +17,7 @@ uintptr_t Heap::s_end = 0;
  *
  * Spinlocks should be implemented though.
  */
-int Heap::init(void *start, size_t size) {
+int Heap::init(void *start, size_t size, bool debug) {
     s_start = (Heap::Header*)start;
 
     s_start->size = size - sizeof(Header);
@@ -23,6 +26,11 @@ int Heap::init(void *start, size_t size) {
     s_start->magic = MAGIC;
 
     s_end = (uintptr_t)start + size;
+
+    s_debug = debug;
+    s_debugInfo.used = 0;
+    s_debugInfo.usedOnHeaders = sizeof(Header);
+    s_debugInfo.free = s_start->size;
 
     return 0;
 }
@@ -49,6 +57,13 @@ void* Heap::alloc(size_t payloadSize) {
             current->used = true;
             current->magic = MAGIC;
 
+            if (s_debug) {
+                s_debugInfo.used += current->size;
+                s_debugInfo.usedOnHeaders += sizeof(Header) * 2;
+                s_debugInfo.free -= current->size + sizeof(Header) * 2;
+            }
+
+            redrawDebug();
             return GET_BLOCK(current);
         }
 
@@ -118,6 +133,21 @@ void* Heap::allocAligned(size_t payloadSize, size_t alignment) {
                 alignedHeader->next = current->next;
             }
 
+            if (s_debug) {
+                size_t memoryTaken = payloadSize;
+                memoryTaken += sizeof(Header);
+                if (prefixSize >= MIN_BLOCK_SIZE) memoryTaken += sizeof(Header);
+                if (remaining >= MIN_BLOCK_SIZE) memoryTaken += sizeof(Header);
+
+                s_debugInfo.used += payloadSize;
+                s_debugInfo.usedOnHeaders += sizeof(Header);          // alignedHeader
+                if (prefixSize >= MIN_BLOCK_SIZE) s_debugInfo.usedOnHeaders += sizeof(Header);
+                if (remaining >= MIN_BLOCK_SIZE) s_debugInfo.usedOnHeaders += sizeof(Header);
+
+                s_debugInfo.free -= memoryTaken;
+            }
+
+            redrawDebug();
             return GET_BLOCK(alignedHeader);
         }
 
@@ -137,8 +167,21 @@ void Heap::free(void *ptr) {
 
     if (header->magic != MAGIC) PANIC("Heap", "Invalid free");
 
-
     header->used = false;
+
+    if (s_debug) {
+        Header* current = header;
+        size_t freedMemory = 0;
+
+        while (current && !current->used) {
+            freedMemory += current->size + sizeof(Header);
+            s_debugInfo.usedOnHeaders -= sizeof(Header);
+            current = current->next;
+        }
+
+        s_debugInfo.used -= header->size;
+        s_debugInfo.free += freedMemory;
+    }
 
     if (header->next && !header->next->used) {
         Header* next = header->next;
@@ -171,8 +214,83 @@ void Heap::free(void *ptr) {
 
         current = next;
     }
+
+    redrawDebug();
 }
 
 void* Heap::realloc(void *ptr, size_t payloadSize) {
 
+}
+
+// TODO: Move this away and get it from text driver instead...
+#define MAX_COLS 80
+
+constexpr uint8_t DEBUG_WIDTH = 20;
+constexpr uint8_t DEBUG_COL = MAX_COLS - DEBUG_WIDTH;
+constexpr uint8_t DEBUG_ROW = 0;
+constexpr uint8_t DEBUG_HEIGHT = 4;
+
+uint32_t lastTotal = 0;
+
+void Heap::redrawDebug() {
+    if (!s_debug) return;
+
+    uint32_t newTotal = s_debugInfo.used + s_debugInfo.free + s_debugInfo.usedOnHeaders;
+
+    drawDebugBoxBorder();
+
+    char buffer[DEBUG_WIDTH - 2];
+
+    Text::setColor(Text::BLACK, Text::WHITE);
+
+    sprintf(buffer, "USD: 0x%x", s_debugInfo.used);
+    Text::putsAt(buffer, DEBUG_COL + 1, DEBUG_ROW + 1);
+    
+    sprintf(buffer, "FRE: 0x%x", s_debugInfo.free);
+    Text::putsAt(buffer, DEBUG_COL + 1, DEBUG_ROW + 2);
+    
+    sprintf(buffer, "HDR: 0x%x", s_debugInfo.usedOnHeaders);
+    Text::putsAt(buffer, DEBUG_COL + 1, DEBUG_ROW + 3);
+
+    sprintf(buffer, "TTL: 0x%x", newTotal);
+    Text::putsAt(buffer, DEBUG_COL + 1, DEBUG_ROW + 4);
+
+    Text::setColor(Text::WHITE, Text::BLACK);
+
+    if (lastTotal && lastTotal != newTotal) {
+        printf("Total increased 0x%x -> 0x%x\n", lastTotal, newTotal);
+    }
+
+    lastTotal = newTotal;
+}
+
+void Heap::drawDebugBoxBorder() {
+    Text::setColor(Text::BLACK, Text::WHITE);
+
+    // Top
+    Text::putcAt('+', DEBUG_COL, DEBUG_ROW);
+    for (int i = 1; i < DEBUG_WIDTH - 1; i++)
+        Text::putcAt('-', DEBUG_COL + i, DEBUG_ROW);
+    Text::putcAt('+', DEBUG_COL + DEBUG_WIDTH - 1, DEBUG_ROW);
+
+    // Bottom
+    Text::putcAt('+', DEBUG_COL, DEBUG_ROW + DEBUG_HEIGHT + 1);
+    for (int i = 1; i < DEBUG_WIDTH - 1; i++)
+        Text::putcAt('-', DEBUG_COL + i, DEBUG_ROW + DEBUG_HEIGHT + 1);
+    Text::putcAt('+', DEBUG_COL + DEBUG_WIDTH - 1, DEBUG_ROW + DEBUG_HEIGHT + 1);
+
+    // Vertical
+    for (int row = DEBUG_ROW + 1; row <= DEBUG_ROW + DEBUG_HEIGHT; row++) {
+        Text::putcAt('|', DEBUG_COL, row);
+        Text::putcAt('|', DEBUG_COL + DEBUG_WIDTH - 1, row);
+    }
+
+    // Inside
+    for (int row = DEBUG_ROW + 1; row <= DEBUG_ROW + DEBUG_HEIGHT; row++) {
+        for (int col = 1; col <= DEBUG_WIDTH - 2; col++) {
+            Text::putcAt(' ', DEBUG_COL + col, row);
+        }
+    }
+
+    Text::setColor(Text::WHITE, Text::BLACK);
 }

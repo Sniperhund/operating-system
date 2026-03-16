@@ -51,6 +51,18 @@ void Text::clear() {
     }
 }
 
+void Text::putcAt(char c, uint8_t col, uint8_t row) {
+    if (col >= MAX_COLS || row >= MAX_ROWS) return;
+
+    video[row * MAX_COLS + col] = c | (s_color << 8);
+}
+
+void Text::putsAt(const char* str, uint8_t col, uint8_t row) {
+    while (*str && col < MAX_COLS) {
+        putcAt(*str++, col++, row);
+    }
+}
+
 void Text::newLine() {
     s_row++;
     s_col = 0;
