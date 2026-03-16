@@ -131,18 +131,30 @@ void* Heap::allocAligned(size_t payloadSize, size_t alignment) {
 }
 
 void Heap::free(void *ptr) {
+    if (!ptr) return;
+
     Header* header = GET_HEADER(ptr);
 
-    printf("Freeing: 0x%p\n", header);
+    if (header->magic != MAGIC) PANIC("Heap", "Invalid free");
+
 
     header->used = false;
+
+    if (header->next && !header->next->used) {
+        Header* next = header->next;
+
+        if (next->magic != MAGIC) PANIC("Heap", "Header doesn't have magic number");
+
+        header->next = next->next;
+        header->size += next->size + sizeof(Header);
+    }
 
     Header* current = s_start;
 
     while (current && (uintptr_t)current < s_end) {
         if (current->next == nullptr) break;
 
-        Header* next = (Header*)current->next;
+        Header* next = current->next;
 
         if ((uintptr_t)next >= s_end) break;
         if (next->magic != MAGIC) PANIC("Heap", "Header doesn't have magic number");
