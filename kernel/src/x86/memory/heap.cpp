@@ -258,7 +258,7 @@ void Heap::redrawDebug() {
     Text::setColor(Text::WHITE, Text::BLACK);
 
     if (lastTotal && lastTotal != newTotal) {
-        printf("[DEBUG HEAP]: Total increased 0x%x -> 0x%x\n", lastTotal, newTotal);
+        printf("[DEBUG HEAP] Total increased 0x%x -> 0x%x\n", lastTotal, newTotal);
     }
 
     lastTotal = newTotal;

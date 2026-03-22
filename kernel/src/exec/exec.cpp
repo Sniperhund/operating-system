@@ -99,8 +99,6 @@ void exec(const char *cmd, const char *args) {
     proc->state = READY;
     proc->ctx.eflags = 0x202;
 
-    printf("Kernel stack ptr: 0x%p\nUser stack ptr: 0x%p\n", proc->kstack, proc->stack);
-
     Scheduler::switchTo(proc);
 }
 

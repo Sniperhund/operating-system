@@ -12,8 +12,6 @@ FAT32::FAT32(uint8_t drive) {
     char label[12] = {0};
     strncpy(label, bootSector->label, 11);
 
-    printf("Reading FAT32: %s\n", label);
-
     totalSectors = bootSector->totalSectors16 ? bootSector->totalSectors16 : bootSector->totalSectors32;
     size = bootSector->tableSize16 ? bootSector->tableSize16 : bootSector->tableSize32;
     firstFatSector = bootSector->reservedSectorCount;
