@@ -136,6 +136,7 @@ void RamFS::destroy(inode* node) {
     ramFSNode* fsNode = (ramFSNode*)node->fsData;
 
     Heap::free(fsNode->name);
+    Heap::free(fsNode->children);
 
     if (fsNode && fsNode->node == node)
         fsNode->node = nullptr;

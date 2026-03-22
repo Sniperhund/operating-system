@@ -79,12 +79,14 @@ void* PageHeap::allocPage(size_t amount) {
 void PageHeap::freePage(void *ptr) {
     if (!ptr) return;
 
+    if ((uintptr_t)ptr % PAGE_SIZE != 0)
+        PANIC("PageHeap", "Unaligned pointer");
+    
+
     Header* header = getHeaderFromPtr(ptr);
 
-    if (!header->used) {
+    if (!header->used)
         PANIC("PageHeap", "Double free or invalid free");
-        return;
-    }
 
     size_t size = header->sizeInPages;
 

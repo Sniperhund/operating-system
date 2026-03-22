@@ -60,8 +60,10 @@ bool FAT32::resolvePath(const char* path, file& outEntry, uint32_t& outCluster) 
     file entry;
 
     for (int i = 0; i < 16; i++) {
-        if (!findInDirectory(currentCluster, token, entry))
+        if (!findInDirectory(currentCluster, token, entry)) {
+            Heap::free(localPath);
             return false;
+        }
 
         uint32_t entryCluster = entry.firstCluster;
 
@@ -73,10 +75,12 @@ bool FAT32::resolvePath(const char* path, file& outEntry, uint32_t& outCluster) 
         } else {
             outEntry = entry;
             outCluster = entryCluster;
+            Heap::free(localPath);
             return true;
         }
     }
 
+    Heap::free(localPath);
     return false;
 }
 

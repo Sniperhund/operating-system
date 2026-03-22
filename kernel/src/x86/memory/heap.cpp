@@ -41,6 +41,11 @@ int Heap::init(void *start, size_t size, bool debug) {
 
 void* Heap::alloc(size_t payloadSize) {
     Header* current = s_start;
+
+    if (current->magic != MAGIC)
+        PANIC("Heap", "Corrupted header in alloc");
+    
+
     payloadSize = (payloadSize + 7) & ~7;
 
     while (current && (uintptr_t)current < s_end) {
@@ -59,8 +64,8 @@ void* Heap::alloc(size_t payloadSize) {
 
             if (s_debug) {
                 s_debugInfo.used += current->size;
-                s_debugInfo.usedOnHeaders += sizeof(Header) * 2;
-                s_debugInfo.free -= current->size + sizeof(Header) * 2;
+                s_debugInfo.usedOnHeaders += sizeof(Header);
+                s_debugInfo.free -= current->size + sizeof(Header);
             }
 
             redrawDebug();
@@ -68,6 +73,10 @@ void* Heap::alloc(size_t payloadSize) {
         }
 
         if (current->next == nullptr) break;
+
+        if (current->next->magic != MAGIC) 
+            PANIC("Heap", "Corrupted header in alloc");
+        
 
         current = current->next;
     }
@@ -170,17 +179,9 @@ void Heap::free(void *ptr) {
     header->used = false;
 
     if (s_debug) {
-        Header* current = header;
-        size_t freedMemory = 0;
-
-        while (current && !current->used) {
-            freedMemory += current->size + sizeof(Header);
-            s_debugInfo.usedOnHeaders -= sizeof(Header);
-            current = current->next;
-        }
-
         s_debugInfo.used -= header->size;
-        s_debugInfo.free += freedMemory;
+        s_debugInfo.free += header->size + sizeof(Header);
+        s_debugInfo.usedOnHeaders -= sizeof(Header);
     }
 
     if (header->next && !header->next->used) {
@@ -190,6 +191,11 @@ void Heap::free(void *ptr) {
 
         header->next = next->next;
         header->size += next->size + sizeof(Header);
+
+        if (s_debug) {
+            s_debugInfo.usedOnHeaders -= sizeof(Header);
+            s_debugInfo.free += sizeof(Header);
+        }
     }
 
     Header* current = s_start;
@@ -207,7 +213,11 @@ void Heap::free(void *ptr) {
 
             current->size = GET_FULL_BLOCK_SIZE(header->size) + current->size;
             current->next = header->next;
-            memset(header, 0, sizeof(Header));
+
+            if (s_debug) {
+                s_debugInfo.usedOnHeaders -= sizeof(Header);
+                s_debugInfo.free += sizeof(Header);
+            }
 
             break;
         }
@@ -228,14 +238,12 @@ void* Heap::realloc(void *ptr, size_t payloadSize) {
 constexpr uint8_t DEBUG_WIDTH = 20;
 constexpr uint8_t DEBUG_COL = MAX_COLS - DEBUG_WIDTH;
 constexpr uint8_t DEBUG_ROW = 0;
-constexpr uint8_t DEBUG_HEIGHT = 4;
-
-uint32_t lastTotal = 0;
+constexpr uint8_t DEBUG_HEIGHT = 3;
 
 void Heap::redrawDebug() {
     if (!s_debug) return;
 
-    uint32_t newTotal = s_debugInfo.used + s_debugInfo.free + s_debugInfo.usedOnHeaders;
+
 
     drawDebugBoxBorder();
 
@@ -252,16 +260,14 @@ void Heap::redrawDebug() {
     sprintf(buffer, "HDR: 0x%x", s_debugInfo.usedOnHeaders);
     Text::putsAt(buffer, DEBUG_COL + 1, DEBUG_ROW + 3);
 
-    sprintf(buffer, "TTL: 0x%x", newTotal);
-    Text::putsAt(buffer, DEBUG_COL + 1, DEBUG_ROW + 4);
-
     Text::setColor(Text::WHITE, Text::BLACK);
 
-    if (lastTotal && lastTotal != newTotal) {
-        printf("[DEBUG HEAP] Total increased 0x%x -> 0x%x\n", lastTotal, newTotal);
-    }
+    uint32_t expected = s_end - (uintptr_t)s_start;
+    uint32_t actual = s_debugInfo.used + s_debugInfo.free + s_debugInfo.usedOnHeaders;
 
-    lastTotal = newTotal;
+    if (actual != expected) {
+        PANIC("Heap", "Accounting mismatch");
+    }
 }
 
 void Heap::drawDebugBoxBorder() {
