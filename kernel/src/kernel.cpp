@@ -21,7 +21,7 @@
 extern char kernel_end[];
 
 extern "C" void kernel_main() {
-    Text::setColor(Text::GRAY, Text::BLACK);
+    Text::setColor(Text::WHITE, Text::BLACK);
     Text::init();
 
     DO_INIT("Initializing GDT", GDT::init(true));
