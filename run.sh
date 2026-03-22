@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+if [ "$1" == "--symbol" ]; then
+    (cd libc && make clean && bear -- make all)
+    (cd programs && make clean && bear -- make all)
+    (cd kernel && make clean && bear -- make build)
+    exit 0
+fi
+
 if ! mountpoint -q /mnt/mydisk; then
     (cd kernel && make mount-disk)
 fi
