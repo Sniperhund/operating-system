@@ -44,7 +44,7 @@ extern "C" void kernel_main() {
     DO_INIT("Initialising Syscalls", Syscall::init());
 
     // Test program
-    exec("/bin/test.elf", "");
+    exec("/bin/test.elf", "hello, world");
     
     Scheduler::run();
 }
