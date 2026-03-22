@@ -15,3 +15,4 @@
 #define E_PID       9   /* Cannot allocate pid */
 #define E_NI        10  /* Not implemented */
 #define E_PROC      11  /* Couldn't create process */
+#define E_PERM      12  /* Operation not permitted */

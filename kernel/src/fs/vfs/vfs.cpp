@@ -92,6 +92,7 @@ size_t VFS::write(inode *node, void *buffer, size_t offset, size_t size) {
 
     if (node->type == inode::INODE_DIR) return -E_NOENT;
     if (!node->fs || !node->fs->write) return -E_NI;
+    if (!(node->flags & O_WRITE)) return -E_PERM;
 
     return node->fs->write(node, buffer, offset, size);
 }
