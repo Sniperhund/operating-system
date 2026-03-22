@@ -26,4 +26,6 @@ private:
 
     // Process
     static int exit(CPUStatus* s);
+    static int getpid(CPUStatus* s);
+    static int getppid(CPUStatus* s);
 };

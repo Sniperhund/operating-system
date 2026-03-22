@@ -10,6 +10,16 @@ int main(int argc, char** argv) {
         printf("argv[%d] = %s\n", i, argv[i]);
     }
 
+    char procFile[64] = {0};
+
+    sprintf(procFile, "/proc/%d/status", getpid());
+
+    char buffer[128] = {0};
+
+    int fd = fopen(procFile, 0);
+    fread(fd, buffer, 128, 0);
+    printf("%s", buffer);
+
     return 1;
 }
     

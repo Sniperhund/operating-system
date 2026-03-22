@@ -31,20 +31,7 @@ int splitArgs(const char* args, const char** argv, int max) {
     return argc;
 }
 
-void exec(const char *cmd, const char *args) {
-    // Start by getting a process, that has state to "NEW"
-    Proc* proc = Proc::createProcess();
-
-    if ((intptr_t)proc == -E_NOMEM) PANIC("PROCESS", "Page Directory couldn't be allocated");
-    if ((intptr_t)proc == -E_PROC) PANIC("PROCESS", "Couldn't open stdout or stderr");
-
-    proc->kstack = (void*)((uintptr_t)Heap::alloc(KERNEL_STACK_SIZE) + KERNEL_STACK_SIZE);
-
-    void* userStackBottom = mmap(proc->pd, (void*)USER_STACK_SPACE, USER_STACK_SIZE + PAGE_SIZE, PROT_WRITE);
-    proc->stack = (void*)((uintptr_t)userStackBottom + USER_STACK_SIZE);
-
-    Paging::switchPD(proc->pd, false);
-
+void addArgs(Proc* proc, const char* args) {
     // Give args to program.
     uintptr_t sp = (uintptr_t)proc->stack;
 
@@ -75,8 +62,25 @@ void exec(const char *cmd, const char *args) {
     
     sp -= sizeof(uintptr_t);
     *(uintptr_t*)sp = argc;
-
     proc->ctx.useresp = (uintptr_t)sp;
+}
+
+void spawn(const char *cmd, const char *args) {
+    // Start by getting a process, that has state to "NEW"
+    Proc* proc = Proc::createProcess();
+
+    if ((intptr_t)proc == -E_NOMEM) PANIC("PROCESS", "Page Directory couldn't be allocated");
+    if ((intptr_t)proc == -E_PROC) PANIC("PROCESS", "Couldn't open stdout or stderr");
+
+    proc->kstack = (void*)((uintptr_t)Heap::alloc(KERNEL_STACK_SIZE) + KERNEL_STACK_SIZE);
+
+    void* userStackBottom = mmap(proc->pd, (void*)USER_STACK_SPACE, USER_STACK_SIZE + PAGE_SIZE, PROT_WRITE);
+    proc->stack = (void*)((uintptr_t)userStackBottom + USER_STACK_SIZE);
+
+    Paging::switchPD(proc->pd, false);
+
+    addArgs(proc, args);
+    
     proc->ctx.esp = (uintptr_t)proc->kstack;
 
     inode* file = VFS::open(cmd);

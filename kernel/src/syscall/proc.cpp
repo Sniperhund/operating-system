@@ -13,3 +13,11 @@ int Syscall::exit(CPUStatus* s) {
 
     return 0;
 }
+
+int Syscall::getpid(CPUStatus* s) {
+    return current->pid;
+}
+
+int Syscall::getppid(CPUStatus* s) {
+    return current->ppid;
+}

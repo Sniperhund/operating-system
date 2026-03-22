@@ -1,5 +1,13 @@
 #pragma once
 
+#define SYSCALL0(nr) \
+    ({  int r; \
+        asm volatile("int $0x80" \
+            : "=a"(r) \
+            : "a"(nr) \
+            : "memory"); \
+        r; })
+
 #define SYSCALL1(nr, a) \
     ({  int r; \
         asm volatile("int $0x80" \

@@ -51,3 +51,4 @@ struct Proc {
 };
 
 void exec(const char* cmd, const char* args);
+void spawn(const char* cmd, const char* args);
