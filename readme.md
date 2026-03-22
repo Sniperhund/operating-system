@@ -11,28 +11,28 @@ The code in most places aren't very good (I think so atleast), but it works _(mo
 
 The features implemented are as follows:
 
--   Interrupts (Exceptions and IRQs, though a syscall interrupt is WIP)
--   Paging (now with permissions)
--   TSS
--   Kernel heap
--   printf for the Kernel
--   A few libc functions (for the kernel only)
--   FAT32 (only reading for now)
--   RamFS (reading and writing)
--   VFS
--   ELF loader (only for executables)
--   Preemptive scheduler (round robin)
--   Usermode (no usermode libc etc)
+- Interrupts (Exceptions and IRQs, though a syscall interrupt is WIP)
+- Paging (now with permissions)
+- TSS
+- Kernel heap
+- printf for the Kernel
+- A few libc functions (for the kernel only)
+- FAT32 (only reading for now)
+- RamFS (reading and writing)
+- VFS
+- ELF loader (only for executables)
+- Preemptive scheduler (round robin)
+- Usermode (no usermode libc etc)
 
 ## Building
 
 You will need:
 
--   Make
--   i386-elf tools
--   nasm
--   grub (Multiboot2 compat)
--   QEMU (for Makefile, though this can be substited with Bochs or an emulator of your choosing)
+- Make
+- i386-elf tools
+- nasm
+- grub (Multiboot2 compat)
+- QEMU (for Makefile, though this can be substited with Bochs or an emulator of your choosing)
 
 To build `kernel.iso`, you can simply run:
 
@@ -40,6 +40,8 @@ To build `kernel.iso`, you can simply run:
 cd kernel
 make build
 ```
+
+## Running
 
 To run the kernel with QEMU, you can run:
 
@@ -57,6 +59,13 @@ mkfs.vfat -F 32 disk.img
 
 This may very well not work on your system, as I have not tested it except on my system<br>
 Feel free to open a issue if you run into problems and I'll try my best to help
+
+## Helper script
+
+I have written a small helper script (`run.sh`) that automate building and running (for the kernel and user programs).
+
+You can use that, but be sure to read it beforehand since it automatically mounts a loopback disk.<br>
+And you have to format `kernel/disk.img` with FAT32 beforehand manually.
 
 ### Issues and feedback
 
