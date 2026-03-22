@@ -11,18 +11,22 @@ The code in most places aren't very good (I think so atleast), but it works _(mo
 
 The features implemented are as follows:
 
-- Interrupts (Exceptions and IRQs, though a syscall interrupt is WIP)
+- Interrupts (Exceptions and IRQs)
 - Paging (now with permissions)
 - TSS
 - Kernel heap
 - printf for the Kernel
-- A few libc functions (for the kernel only)
+- A few libc functions for the kernel
 - FAT32 (only reading for now)
 - RamFS (reading and writing)
+- ProcFS (with status file only for now)
+- ConsoleFS (for writting to stdout in usermode). Though this will likely be merged into ProcFS at some point.
 - VFS
 - ELF loader (only for executables)
 - Preemptive scheduler (round robin)
-- Usermode (no usermode libc etc)
+- Usermode
+- Syscalls for fs operations
+- File libc function for usermode
 
 ## Building
 

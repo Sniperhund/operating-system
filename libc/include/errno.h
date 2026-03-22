@@ -2,6 +2,8 @@
 
 #include "stdint.h"
 
+extern int errno;
+
 #define E_NOENT     1   /* No such file or directory */
 #define E_INVAL     2   /* Invalid or missing argument */
 #define E_NOTDIR    3   /* Not a directory */
@@ -11,3 +13,5 @@
 #define E_NOMEM     7   /* Cannot allocate memory */
 #define E_MFILE     8   /* Too many open files */
 #define E_PID       9   /* Cannot allocate pid */
+#define E_NI        10  /* Not implemented */
+#define E_PROC      11  /* Couldn't create process */
