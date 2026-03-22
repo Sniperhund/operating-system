@@ -102,6 +102,7 @@ inode* VFS::open(const char *path, uint32_t flags) {
 
     if(resolve(path, &node) == 0) {
         node->refCount++;
+        node->flags = flags;
         return node;
     }
 
