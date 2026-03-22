@@ -40,6 +40,8 @@ void setupArgs(Proc* proc, const char* args) {
     const char* argvTemp[MAX_ARGS] = {0};
     int argc = splitArgs(argBuffer, argvTemp, MAX_ARGS);
 
+    Heap::free(argBuffer);
+
     uintptr_t argvPtrs[MAX_ARGS] = {0};
 
     for (int i = argc - 1; i >= 0; i--) {
@@ -71,8 +73,8 @@ void exec(const char *cmd, const char *args) {
 
     if (proc == nullptr) PANIC("PROCESS", "Can't use exec with no current process");
 
-    const char* cmdC = strdup(cmd);
-    const char* argsC = strdup(args);
+    char* cmdC = strdup(cmd);
+    char* argsC = strdup(args);
 
     void* oldPD = proc->pd;
     proc->pd = Paging::createPD();
@@ -95,6 +97,8 @@ void exec(const char *cmd, const char *args) {
     loadDebugSymbols(cmdC, proc->ctx.eip);
     
     Heap::free(buffer);
+    Heap::free(cmdC);
+    Heap::free(argsC);
 
     proc->state = READY;
     proc->ctx.eflags = 0x202;

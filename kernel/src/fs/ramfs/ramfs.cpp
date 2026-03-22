@@ -135,6 +135,8 @@ int RamFS::readdir(inode* dir, size_t index, inode** out) {
 void RamFS::destroy(inode* node) {
     ramFSNode* fsNode = (ramFSNode*)node->fsData;
 
+    Heap::free(fsNode->name);
+
     if (fsNode && fsNode->node == node)
         fsNode->node = nullptr;
 
