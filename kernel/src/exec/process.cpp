@@ -24,7 +24,7 @@ int Proc::addFd(inode* file) {
         }
     }
 
-    return -1;
+    return -E_MFILE;
 }
 
 int Proc::removeFd(size_t fd) {

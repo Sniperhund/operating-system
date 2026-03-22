@@ -1,3 +1,4 @@
+#include "error.h"
 #include "fs/fat32.h"
 #include "fs/vfs.h"
 
@@ -27,7 +28,7 @@ int FAT32VFS::lookup(inode* dir, const char* name, inode** out) {
 
     FAT32::file entry;
     if (!fs->findInDirectory(node->cluster, name, entry))
-        return 1;
+        return -E_NOENT;
 
     fat32Node* child = new fat32Node;
     child->fs = fs;

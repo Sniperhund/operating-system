@@ -1,11 +1,12 @@
 #include "irq.h"
+#include "error.h"
 #include "x86/pic.h"
 #include <stdio.h>
 
 IRQ::irqHandlerFunc IRQ::s_irqRoutines[16];
 
 int IRQ::registerIRQ(uint8_t irq, irqHandlerFunc func) {
-    if (!func) return 1;
+    if (!func) return -E_INVAL;
     
     s_irqRoutines[irq] = func;
 

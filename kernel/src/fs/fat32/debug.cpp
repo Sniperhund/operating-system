@@ -1,10 +1,11 @@
 #include "fs/fat32.h"
+#include "x86/memory/heap.h"
 #include <string.h>
 
 void FAT32::walkRootDir() {
     uint32_t cluster = rootCluster;
 
-    uint8_t buffer[512]; // TODO: Change to Heap::alloc when free is implemented
+    uint8_t* buffer = (uint8_t*)Heap::alloc(512);
 
     while (cluster < CLUSTER_EOF) {
         uint32_t lba = clusterToLBA(cluster);
@@ -15,7 +16,10 @@ void FAT32::walkRootDir() {
             for (int i = 0; i < 512; i += sizeof(file)) {
                 file* entry = (file*)(buffer + i);
 
-                if (entry->name[0] == 0x0) return;
+                if (entry->name[0] == 0x0) {
+                    Heap::free(buffer);
+                    return;
+                }
                 if ((uint8_t)entry->name[0] == 0xE5) continue;
                 if (entry->attributes == 0x0F) continue; // LFN
                 if (entry->attributes & 0x08) continue;  // Volume label
@@ -32,4 +36,6 @@ void FAT32::walkRootDir() {
 
         cluster = readFAT(cluster);
     }
+
+    Heap::free(buffer);
 }
