@@ -23,7 +23,7 @@ LDFLAGS := -T linker.ld
 # Every directory except binaries/ and sysroot/
 ALL_DIRS := $(wildcard */)
 ALL_DIRS := $(ALL_DIRS:/=)
-PROGRAM_DIRS := $(filter-out sysroot binaries,$(ALL_DIRS))
+PROGRAM_DIRS := $(filter-out sysroot binaries crt,$(ALL_DIRS))
 ELFS := $(PROGRAM_DIRS:%=$(OUT)/%.elf)
 
 $(LIBC_BUILD):
@@ -36,10 +36,10 @@ $(LIBC_A): $(LIBC_BUILD)
 	cp -r $(LIBC_SRC)/include/* $(SYSROOT)/include/
 	cp $(LIBC_BUILD) $(SYSROOT)/lib/
 
-$(OUT)/%.elf: %/main.c $(LIBC_A)
+$(OUT)/%.elf: crt/crt0.c %/main.c $(LIBC_A)
 	@echo "[*] Building $*"
 	mkdir -p $(OUT)
-	$(CC) $(CFLAGS) $(LDFLAGS) $< $(SYSROOT)/lib/libc.a -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ $(SYSROOT)/lib/libc.a -o $@
 
 all: $(ELFS)
 

@@ -1,17 +1,15 @@
 #include "stdint.h"
 #include "stdio.h"
+#include <stdio.h>
 #include <unistd.h>
 
-void _start() {
-    int ret = fopen("/test.txt", 0);
+int main(int argc, char** argv) {
+    printf("Hello, world\n");
+    printf("argc = %d\n", argc);
+    for (int i = 0; i < argc; i++) {
+        printf("argv[%d] = %s\n", i, argv[i]);
+    }
 
-    if (ret == -1) exit(255);
-
-    char buffer[7] = {0};
-    fread(ret, (void*)buffer, 5, 0);
-    buffer[5] = '\n';
-    buffer[6] = 0;
-    fwrite(0, buffer, 6, 0);
-
-    exit(0);
+    return 1;
 }
+    
