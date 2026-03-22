@@ -20,6 +20,10 @@ int main(int argc, char** argv) {
     fread(fd, buffer, 128, 0);
     printf("%s", buffer);
 
+    printf("Running exec\n");
+    exec("/bin/test.elf", "hello, usermode 2");
+    printf("exec returned\n");
+
     return 1;
 }
     

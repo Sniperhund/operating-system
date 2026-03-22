@@ -17,6 +17,12 @@ public:
 
     static Proc* getByPid(pid_t pid);
 
+    /**
+     * Force a switch to another process.
+     * This doesn't save the previous process only switches, therefore it should only be used if the previous process doesn't matter.
+     */
+    static void switchTo(Proc* next);
+
 private:
     static constexpr uint32_t MAX_PROCESSES = 32;
 
@@ -27,6 +33,4 @@ private:
     static void timer(CPUStatus* status);
 
     static void purgeProcesses();
-
-    static void switchTo(Proc* next);
 };

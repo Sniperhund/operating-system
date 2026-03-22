@@ -15,5 +15,5 @@ usermode:
     push 0x1b       ; Kernel code segment
     push [esi + 32]         ; ctx->eip
 
-    mov esi, [esp + 16]
+    mov esi, [esi + 16]
     iret

@@ -26,6 +26,8 @@ private:
         void* block;
     };
 
+    static Header* getHeaderFromPtr(void* ptr);
+
     /**
      * The first 4096 bytes of the memory is used for headers
      */

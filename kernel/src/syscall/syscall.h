@@ -28,4 +28,6 @@ private:
     static int exit(CPUStatus* s);
     static int getpid(CPUStatus* s);
     static int getppid(CPUStatus* s);
+    static int exec(CPUStatus* s);
+    static int fork(CPUStatus* s);
 };

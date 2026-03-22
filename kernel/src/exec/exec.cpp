@@ -8,6 +8,7 @@
 #include "x86/memory/heap.h"
 #include "x86/memory/paging.h"
 #include "error.h"
+#include "stdio.h"
 
 // TODO: Move these away
 #define KERNEL_STACK_SIZE   1024 * 16 // 16 KiB
@@ -31,7 +32,7 @@ int splitArgs(const char* args, const char** argv, int max) {
     return argc;
 }
 
-void addArgs(Proc* proc, const char* args) {
+void setupArgs(Proc* proc, const char* args) {
     // Give args to program.
     uintptr_t sp = (uintptr_t)proc->stack;
 
@@ -65,6 +66,44 @@ void addArgs(Proc* proc, const char* args) {
     proc->ctx.useresp = (uintptr_t)sp;
 }
 
+void exec(const char *cmd, const char *args) {
+    Proc* proc = current;
+
+    if (proc == nullptr) PANIC("PROCESS", "Can't use exec with no current process");
+
+    const char* cmdC = strdup(cmd);
+    const char* argsC = strdup(args);
+
+    void* oldPD = proc->pd;
+    proc->pd = Paging::createPD();
+
+    void* userStackBottom = mmap(proc->pd, (void*)USER_STACK_SPACE, USER_STACK_SIZE, PROT_WRITE);
+    proc->stack = (void*)((uintptr_t)userStackBottom + USER_STACK_SIZE);
+
+    Paging::switchPD(proc->pd, false);
+    Paging::freePD(oldPD);
+
+    setupArgs(proc, argsC);
+
+    inode* file = VFS::open(cmdC);
+    if (!file) PANIC("PROCESS", "Couldn't open file");
+
+    void* buffer = Heap::alloc(file->size);
+    VFS::read(file, buffer, 0, file->size);
+
+    ELFLoader::loadExecutable(buffer, &proc->ctx.eip);
+    loadDebugSymbols(cmdC, proc->ctx.eip);
+    
+    Heap::free(buffer);
+
+    proc->state = READY;
+    proc->ctx.eflags = 0x202;
+
+    printf("Kernel stack ptr: 0x%p\nUser stack ptr: 0x%p\n", proc->kstack, proc->stack);
+
+    Scheduler::switchTo(proc);
+}
+
 void spawn(const char *cmd, const char *args) {
     // Start by getting a process, that has state to "NEW"
     Proc* proc = Proc::createProcess();
@@ -79,7 +118,7 @@ void spawn(const char *cmd, const char *args) {
 
     Paging::switchPD(proc->pd, false);
 
-    addArgs(proc, args);
+    setupArgs(proc, args);
     
     proc->ctx.esp = (uintptr_t)proc->kstack;
 

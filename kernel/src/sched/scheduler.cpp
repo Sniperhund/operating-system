@@ -6,6 +6,7 @@
 #include "x86/memory/paging.h"
 #include "x86/pic.h"
 #include "x86/tss.h"
+#include <stdio.h>
 #include <string.h>
 
 Proc* Scheduler::s_processes[MAX_PROCESSES];
@@ -40,8 +41,6 @@ void Scheduler::run() {
         asm volatile("hlt");
     }
 }
-
-#include <stdio.h>
 
 uint32_t currentProc = -1;
 
@@ -96,6 +95,7 @@ void Scheduler::switchTask(CPUStatus *cpu) {
     }
 
     asm volatile("sti");
+
     while (1) { asm volatile("hlt"); }
 }
 

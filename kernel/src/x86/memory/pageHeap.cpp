@@ -1,4 +1,5 @@
 #include "pageHeap.h"
+#include "panic.h"
 #include "x86/memory/heap.h"
 #include "x86/memory/paging.h"
 #include <stdio.h>
@@ -76,6 +77,29 @@ void* PageHeap::allocPage(size_t amount) {
 }
 
 void PageHeap::freePage(void *ptr) {
-    Header* header = GET_HEADER(ptr);
-    
+    if (!ptr) return;
+
+    Header* header = getHeaderFromPtr(ptr);
+
+    if (!header->used) {
+        PANIC("PageHeap", "Double free or invalid free");
+        return;
+    }
+
+    size_t size = header->sizeInPages;
+
+    Header* current = header;
+    for (size_t i = 0; i < size; i++) {
+        current->used = false;
+        current->sizeInPages = 1;
+        current = NEXT_HEADER(current);
+    }
+
+    s_lastAccessed = header;
+}
+
+PageHeap::Header* PageHeap::getHeaderFromPtr(void* ptr) {
+    uintptr_t startBlock = (uintptr_t)s_first + PAGE_SIZE;
+    size_t index = ((uintptr_t)ptr - startBlock) / PAGE_SIZE;
+    return (Header*)((uintptr_t)s_first + index * sizeof(Header));
 }

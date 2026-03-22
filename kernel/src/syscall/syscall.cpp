@@ -18,6 +18,8 @@ int Syscall::init() {
     s_routines[4] = exit;
     s_routines[5] = getpid;
     s_routines[6] = getppid;
+    s_routines[7] = exec;
+    s_routines[8] = fork;
 
     return 0;
 }
