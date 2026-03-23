@@ -1,5 +1,5 @@
 #include "idt.h"
-#include "drivers/text.h"
+#include "interrupt.h"
 #include "gdt.h"
 #include <string.h>
 #include <stdio.h>
@@ -31,7 +31,7 @@ int IDT::init() {
     setDescriptor(0x80, &syscall_stub, 0xEE);
 
     asm volatile("lidt %0" : : "m"(s_idtr));
-    asm volatile("sti");
+    sti();
 
     return 0;
 }
@@ -86,4 +86,12 @@ extern "C" void exceptionHandlerC(CPUStatus* status) {
 
 void IDT::registerExceptionHandler(uint8_t isr, isrHandlerFunc func) {
     if (func) s_isr[isr] = func;
+}
+
+void cli() {
+    asm volatile("cli");
+}
+
+void sti() {
+    asm volatile("sti");
 }

@@ -2,6 +2,7 @@
 #include "exec/process.h"
 #include "panic.h"
 #include "x86/idt.h"
+#include "x86/interrupt.h"
 #include "x86/irq.h"
 #include "x86/memory/paging.h"
 #include "x86/pic.h"
@@ -48,7 +49,7 @@ uint32_t currentProc = -1;
 void Scheduler::switchTask(CPUStatus *cpu) {
     // NOTE: This shouldn't be called before Scheduler::run
 
-    asm volatile("cli");
+    cli();
 
     if (current) {
         CPUContext* ctx = &current->ctx;
@@ -94,7 +95,7 @@ void Scheduler::switchTask(CPUStatus *cpu) {
         switchTo(next);
     }
 
-    asm volatile("sti");
+    sti();
 
     while (1) { asm volatile("hlt"); }
 }

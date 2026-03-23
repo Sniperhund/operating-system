@@ -5,6 +5,7 @@
 #include "panic.h"
 #include "sched/scheduler.h"
 #include "string.h"
+#include "x86/interrupt.h"
 #include "x86/memory/heap.h"
 #include "x86/memory/paging.h"
 #include "error.h"
@@ -140,7 +141,7 @@ void spawn(const char *cmd, const char *args) {
     proc->state = READY;
     proc->ctx.eflags = 0x202;
 
-    asm volatile("cli");
+    cli();
     Scheduler::addProcess(proc);
-    asm volatile("sti");
+    sti();
 }
