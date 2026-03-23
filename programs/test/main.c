@@ -2,6 +2,7 @@
 #include "stdio.h"
 #include <stdio.h>
 #include <unistd.h>
+#include <errno.h>
 
 int main(int argc, char** argv) {
     printf("Hello, world\n");
@@ -20,9 +21,12 @@ int main(int argc, char** argv) {
     fread(fd, buffer, 128, 0);
     printf("%s", buffer);
 
-    printf("Running exec\n");
-    exec("/bin/test.elf", "hello, usermode 2");
-    printf("exec returned\n");
+    for (int i = 0; i < 128; i++) {
+        buffer[i] = 0;
+    }
+
+    fread(0, buffer, 128, 0);
+    printf("[%d]: %s", errno, buffer);
 
     return 1;
 }

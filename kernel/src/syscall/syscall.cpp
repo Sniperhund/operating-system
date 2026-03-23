@@ -29,6 +29,21 @@ extern "C" void syscallHandlerC(CPUStatus* s) {
         PANIC("Syscall", "Syscall not found");
     }
 
+    CPUContext* ctx = &current->ctx;
+    ctx->eax = s->eax;
+    ctx->ebx = s->ebx;
+    ctx->ecx = s->ecx;
+    ctx->edx = s->edx;
+    ctx->esi = s->esi;
+    ctx->edi = s->edi;
+    ctx->ebp = s->ebp;
+    ctx->esp = s->esp;
+    ctx->eip = s->eip;
+
+    ctx->eflags = s->eflags;
+    ctx->useresp = s->useresp;
+    ctx->ss = s->ss;
+
     int ret = Syscall::s_routines[s->eax](s);
 
     // Return value to userspace

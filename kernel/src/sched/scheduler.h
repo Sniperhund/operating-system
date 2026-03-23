@@ -3,6 +3,11 @@
 #include "exec/process.h"
 #include "x86/idt.h"
 
+struct WaitQueue {
+    Proc* procs[16];
+    int count;
+};
+
 extern Proc* current;
 
 class Scheduler {
@@ -23,12 +28,17 @@ public:
      */
     static void switchTo(Proc* next);
 
+    static void sleepCurrent(WaitQueue* queue);
+    static void wakeOne(WaitQueue* queue);
+
 private:
     static constexpr uint32_t MAX_PROCESSES = 32;
 
     static Proc* s_processes[MAX_PROCESSES];
     static uint32_t s_time;
     static uint32_t s_processCount;
+
+    static bool s_pendingYield;
 
     static void timer(CPUStatus* status);
 

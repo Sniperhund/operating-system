@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sched/scheduler.h"
 #include "vfs.h"
 
 class ConsoleFS {
@@ -23,4 +24,6 @@ private:
     struct ConsoleNode {
         ConsoleNodeType type;
     };
+
+    static WaitQueue s_stdinQueue;
 };

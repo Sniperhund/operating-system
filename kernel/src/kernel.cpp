@@ -27,7 +27,7 @@ extern "C" void kernel_main() {
     DO_INIT("Initializing GDT", GDT::init(true));
     DO_INIT("Initialising PIC", PIC::remap());
     DO_INIT("Initialising IDT", IDT::init());
-    Keyboard::init(true);
+    DO_INIT("Initialising Keyboard", Keyboard::init(false));
     DO_INIT("Initialising Heap", Heap::init(kernel_end, 0xF0000, true));
     DO_INIT("Initialising PageHeap", PageHeap::init(32));
     DO_INIT("Initialising Paging", Paging::init());

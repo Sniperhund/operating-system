@@ -1,8 +1,11 @@
 #include "fs/consolefs.h"
 #include "drivers/text.h"
 #include "error.h"
+#include "fs/vfs.h"
+#include "sched/scheduler.h"
 #include <stdio.h>
 #include <string.h>
+#include <drivers/keyboard.h>
 
 FSOps ConsoleFS::ConsoleFSOps = {
     .mount      = mount,
@@ -14,6 +17,8 @@ FSOps ConsoleFS::ConsoleFSOps = {
     .deleteE    = nullptr,
     .create     = nullptr,
 };
+
+WaitQueue ConsoleFS::s_stdinQueue = {{}, 0};
 
 int ConsoleFS::mount(void* device, inode** root) {
     inode* node = new inode;
@@ -27,6 +32,9 @@ int ConsoleFS::mount(void* device, inode** root) {
     node->fsData = conNode;
 
     *root = node;
+
+    Keyboard::setStdinQueue(&s_stdinQueue);
+
     return 0;
 }
 
@@ -67,13 +75,47 @@ int ConsoleFS::lookup(inode* dir, const char* name, inode** out) {
 
         *out = ino;
         return 0;
+    } else if (strcmp(name, "stdin") == 0) {
+        inode* ino = new inode;
+
+        ino->type = inode::INODE_CHARDEV;
+        ino->size = 0;
+        ino->refCount = 1;
+        ino->fs = &ConsoleFSOps;
+
+        ConsoleNode* conNode = new ConsoleNode;
+        conNode->type = ConsoleNodeType::CON_IN;
+
+        ino->fsData = conNode;
+
+        *out = ino;
+        return 0;
     }
 
     return -E_NOENT;
 }
 
 int ConsoleFS::read(inode* node, void* buffer, size_t offset, size_t size) {
-    
+    ConsoleNode* conNode = (ConsoleNode*)node->fsData;
+
+    if (conNode->type != ConsoleNodeType::CON_IN)
+        return -E_INVAL;
+
+    char* buf = (char*)buffer;
+    size_t readCount = 0;
+
+    while (readCount < size) {
+        while (Keyboard::bufferEmpty()) {
+            Scheduler::sleepCurrent(&s_stdinQueue);
+        }
+
+        char c = Keyboard::bufferPop();
+        buf[readCount++] = c;
+
+        if (c == '\n') break;
+    }
+
+    return readCount;
 }
 
 int ConsoleFS::write(inode* node, const void* buffer, size_t offset, size_t size) {

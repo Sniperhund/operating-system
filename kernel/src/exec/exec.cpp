@@ -114,7 +114,7 @@ void spawn(const char *cmd, const char *args) {
     Proc* proc = Proc::createProcess();
 
     if (proc == nullptr) PANIC("PROCESS", "Page Directory couldn't be allocated");
-    if ((intptr_t)proc == -E_PROC) PANIC("PROCESS", "Couldn't open stdout or stderr");
+    if ((intptr_t)proc == -E_PROC) PANIC("PROCESS", "Couldn't open stdout or stdin or stderr");
 
     proc->kstack = (void*)((uintptr_t)Heap::alloc(KERNEL_STACK_SIZE) + KERNEL_STACK_SIZE);
 

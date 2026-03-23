@@ -14,6 +14,8 @@ Proc* Scheduler::s_processes[MAX_PROCESSES];
 uint32_t Scheduler::s_time = 0;
 uint32_t Scheduler::s_processCount = 0;
 
+bool Scheduler::s_pendingYield = false;
+
 Proc* current = nullptr;
 
 int Scheduler::init() {
@@ -52,19 +54,19 @@ void Scheduler::switchTask(CPUStatus *cpu) {
     cli();
 
     if (current) {
-        CPUContext* ctx = &current->ctx;
-        ctx->eax = cpu->eax;
-        ctx->ebx = cpu->ebx;
-        ctx->ecx = cpu->ecx;
-        ctx->edx = cpu->edx;
-        ctx->esi = cpu->esi;
-        ctx->edi = cpu->edi;
-        ctx->ebp = cpu->ebp;
-        ctx->esp = cpu->esp;
-        ctx->eip = cpu->eip;
+        if ((cpu->cs & 0x3) == 3) {
+            CPUContext* ctx = &current->ctx;
+            ctx->eax = cpu->eax;
+            ctx->ebx = cpu->ebx;
+            ctx->ecx = cpu->ecx;
+            ctx->edx = cpu->edx;
+            ctx->esi = cpu->esi;
+            ctx->edi = cpu->edi;
+            ctx->ebp = cpu->ebp;
+            ctx->esp = cpu->esp;
+            ctx->eip = cpu->eip;
 
-        ctx->eflags = cpu->eflags;
-        if ((cpu->cs & 0x3) == 3) { // If true CPL == 3
+            ctx->eflags = cpu->eflags;
             ctx->useresp = cpu->useresp;
             ctx->ss = cpu->ss;
         }
@@ -96,6 +98,7 @@ void Scheduler::switchTask(CPUStatus *cpu) {
     }
 
     sti();
+    PIC::sendEOI(0);
 
     while (1) { asm volatile("hlt"); }
 }
@@ -113,8 +116,10 @@ Proc* Scheduler::getByPid(pid_t pid) {
 void Scheduler::timer(CPUStatus* status) {
     s_time++;
 
-    if (s_time % 10 == 0)
+    if (s_pendingYield || s_time % 10 == 0) {
+        s_pendingYield = false;
         switchTask(status);
+    }
 }
 
 void Scheduler::purgeProcesses() {
@@ -143,4 +148,49 @@ void Scheduler::switchTo(Proc* next) {
     PIC::sendEOI(0);
 
     usermode(&next->ctx);
+}
+
+void Scheduler::sleepCurrent(WaitQueue* queue) {
+    cli();
+
+    if (!current) {
+        sti();
+        return;
+    };
+
+    if (queue->count < 16) {
+        queue->procs[queue->count++] = current;
+    }
+
+    current->state = BLOCKED;
+
+    s_pendingYield = true;
+
+    sti();
+
+    while (current->state == BLOCKED) {
+        asm volatile("hlt");
+    }
+}
+
+void Scheduler::wakeOne(WaitQueue* queue) {
+    cli();
+
+    if (queue->count == 0) {
+        sti();
+        return;
+    }
+
+    Proc* proc = queue->procs[0];
+
+    for (int i = 1; i < queue->count; i++) {
+        queue->procs[i - 1] = queue->procs[i];
+    }
+
+    queue->count--;
+
+    if (proc->state == BLOCKED)
+        proc->state = READY;
+
+    sti();
 }

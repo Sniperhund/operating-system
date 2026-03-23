@@ -9,6 +9,8 @@ class Syscall {
 public:
     static int init();
 
+    static CPUStatus* s_currentStatus;
+
 private:
     friend void ::syscallHandlerC(CPUStatus*);
     

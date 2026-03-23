@@ -11,7 +11,7 @@ int printf(const char* format, ...) {
 
     va_end(arg);
 
-    fwrite(0, buffer, ret, 0);
+    fwrite(1, buffer, ret, 0);
 
     return ret;
 }

@@ -53,15 +53,20 @@ Proc* Proc::createProcess() {
     proc->pid = PID::allocate();
     proc->pd = Paging::createPD();
 
+    inode* stdin = VFS::open("/dev/stdin", O_READ);
+    if (!stdin) return (Proc*)-E_PROC;
+
+    proc->files.fds[0] = stdin;
+
     inode* stdout = VFS::open("/dev/stdout", O_WRITE);
     if (!stdout) return (Proc*)-E_PROC;
 
-    proc->files.fds[0] = stdout;
+    proc->files.fds[1] = stdout;
 
     inode* stderr = VFS::open("/dev/stderr", O_WRITE);
     if (!stderr) return (Proc*)-E_PROC;
 
-    proc->files.fds[1] = stderr;
+    proc->files.fds[2] = stderr;
 
     if (!proc->pd) return (Proc*)-E_NOMEM;
 

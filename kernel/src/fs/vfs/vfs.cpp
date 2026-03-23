@@ -81,7 +81,7 @@ int VFS::resolve(const char *path, inode **out) {
 size_t VFS::read(inode* node, void* buffer, size_t offset, size_t size) {
     if (!node || !buffer) return -E_INVAL;
 
-    if (node->type != inode::INODE_FILE) return -E_NOENT;
+    if (node->type != inode::INODE_FILE && node->type != inode::INODE_CHARDEV) return -E_NOENT;
     if (!node->fs || !node->fs->read) return -E_NI;
 
     return node->fs->read(node, buffer, offset, size);
