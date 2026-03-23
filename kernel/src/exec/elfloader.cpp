@@ -1,4 +1,5 @@
 #include "elfloader.h"
+#include "panic.h"
 #include "x86/memory/paging.h"
 #include "x86/memory/pmm.h"
 #include <string.h>
@@ -28,7 +29,10 @@ uint8_t ELFLoader::loadExecutable(void* file, uint32_t* entry) {
         printf("[DEBUG] Program loaded at: 0x%x\n", vaddr);
 
         for (uint32_t j = 0; j < size + PAGE_SIZE; j += PAGE_SIZE) {
-            mmap((void*)(vaddr + j), PAGE_SIZE, PROT_WRITE);
+            void* result = mmap((void*)(vaddr + j), PAGE_SIZE, PROT_WRITE);
+
+            if (result == nullptr)
+                PANIC("ELF LOADER", "Unable to map memory");
         }
 
         void* src = (uint8_t*)file + ph[i].offset;

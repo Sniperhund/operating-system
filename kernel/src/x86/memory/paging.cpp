@@ -123,7 +123,7 @@ int Paging::mappage(void *vDir, void *virt, size_t frame, uint8_t prot) {
     }
 
     if (!table->pages[ptIdx].present) {
-        if (frame) table->pages[ptIdx].frame = frame;
+        if (frame != (size_t)-1) table->pages[ptIdx].frame = frame;
         else {
             void* ptr = (PD*)PageHeap::allocPage();
 
@@ -173,7 +173,7 @@ Paging::PD* Paging::createPD() {
     PD* pd = (PD*)PageHeap::allocPage(2);
 
     if (!pd) {
-        return (PD*)-E_NOMEM;
+        return nullptr;
     }
 
     uint32_t frame = PMM::physToFrame((void*)((uintptr_t)pd - LOAD_MEMORY_ADDRESS));
@@ -196,14 +196,19 @@ void Paging::freePD(void* vDir) {
 
     constexpr int KERNEL_PD_START = LOAD_MEMORY_ADDRESS >> 22;
 
-    for (int pdIdx = 0; pdIdx < KERNEL_PD_START; pdIdx++) {
+    for (int pdIdx = 0; pdIdx < 1024; pdIdx++) {
         PT* table = dir->refTables[pdIdx];
         if (!table) continue;
 
         for (int ptIdx = 0; ptIdx < 1024; ptIdx++) {
             if (!table->pages[ptIdx].present) continue;
 
-            PMM::unmark(table->pages[ptIdx].frame);
+            uint32_t frame = table->pages[ptIdx].frame;
+            void* virtAddr = (void*)((uintptr_t)frame << 12);
+
+            if (PageHeap::isManaged(virtAddr)) PageHeap::freePage(virtAddr);
+            if (pdIdx < KERNEL_PD_START) PMM::unmark(frame);
+
             table->pages[ptIdx].present = 0;
         }
 
@@ -262,7 +267,7 @@ void* mmap(void* addr, size_t length, uint8_t prot) {
 
 void* mmap(void* dir, void* addr, size_t length, uint8_t prot) {
     if (!addr) {
-        return (void*)-E_INVAL;
+        return nullptr;
     }
 
     length = PAGE_ALIGNUP(length);
@@ -272,10 +277,10 @@ void* mmap(void* dir, void* addr, size_t length, uint8_t prot) {
         PMM::mark(frame);
         int result = Paging::mappage(dir, (void*)((uintptr_t)addr + i), frame, prot);
         
-        if (result) {
+        if (result != 0) {
             // Clean up after ourselves since it failed.
             if (i != 0) munmap(dir, addr, i);
-            return (void*)-E_NOMEM;
+            return nullptr;
         }
     }
 

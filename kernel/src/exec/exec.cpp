@@ -79,11 +79,13 @@ void exec(const char *cmd, const char *args) {
     void* oldPD = proc->pd;
     proc->pd = Paging::createPD();
 
-    void* userStackBottom = mmap(proc->pd, (void*)USER_STACK_SPACE, USER_STACK_SIZE, PROT_WRITE);
-    proc->stack = (void*)((uintptr_t)userStackBottom + USER_STACK_SIZE);
+    if (proc->pd == nullptr) PANIC("PROCESS", "Page Directory couldn't be allocated");
 
     Paging::switchPD(proc->pd, false);
     Paging::freePD(oldPD);
+
+    void* userStackBottom = mmap(proc->pd, (void*)USER_STACK_SPACE, USER_STACK_SIZE + PAGE_SIZE, PROT_WRITE);
+    proc->stack = (void*)((uintptr_t)userStackBottom + USER_STACK_SIZE);
 
     setupArgs(proc, argsC);
 
@@ -110,7 +112,7 @@ void spawn(const char *cmd, const char *args) {
     // Start by getting a process, that has state to "NEW"
     Proc* proc = Proc::createProcess();
 
-    if ((intptr_t)proc == -E_NOMEM) PANIC("PROCESS", "Page Directory couldn't be allocated");
+    if (proc == nullptr) PANIC("PROCESS", "Page Directory couldn't be allocated");
     if ((intptr_t)proc == -E_PROC) PANIC("PROCESS", "Couldn't open stdout or stderr");
 
     proc->kstack = (void*)((uintptr_t)Heap::alloc(KERNEL_STACK_SIZE) + KERNEL_STACK_SIZE);

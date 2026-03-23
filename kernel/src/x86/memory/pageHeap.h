@@ -18,7 +18,9 @@ public:
      */
     static void freePage(void* ptr);
 
-private:
+    static bool isManaged(void *ptr);
+
+  private:
     struct Header {
         bool used;
         // Amount of pages allocated in a row.
@@ -33,4 +35,6 @@ private:
      */
     static Header* s_first;
     static Header* s_lastAccessed;
+
+    static size_t s_maxPages;
 };

@@ -7,6 +7,7 @@
 
 PageHeap::Header* PageHeap::s_first = nullptr;
 PageHeap::Header* PageHeap::s_lastAccessed = nullptr;
+size_t PageHeap::s_maxPages = 0;
 
 #define NEXT_HEADER(header) ((PageHeap::Header*)((uintptr_t)(header) + sizeof(PageHeap::Header)))
 #define GET_HEADER(header) ((PageHeap::Header*)(s_first + (((uintptr_t)(header) - (uintptr_t)s_first) / PAGE_SIZE - 1)))
@@ -26,6 +27,8 @@ int PageHeap::init(size_t maxPages) {
 
         current = NEXT_HEADER(current);
     }
+
+    s_maxPages = maxPages;
 
     return 0;
 }
@@ -81,27 +84,29 @@ void PageHeap::freePage(void *ptr) {
 
     if ((uintptr_t)ptr % PAGE_SIZE != 0)
         PANIC("PageHeap", "Unaligned pointer");
-    
 
     Header* header = getHeaderFromPtr(ptr);
 
-    if (!header->used)
-        PANIC("PageHeap", "Double free or invalid free");
+    if (!header->used) return;
 
     size_t size = header->sizeInPages;
 
-    Header* current = header;
     for (size_t i = 0; i < size; i++) {
-        current->used = false;
-        current->sizeInPages = 1;
-        current = NEXT_HEADER(current);
+        header->used = false;
+        header = NEXT_HEADER(header);
     }
 
-    s_lastAccessed = header;
+    s_lastAccessed = getHeaderFromPtr(ptr);
 }
 
 PageHeap::Header* PageHeap::getHeaderFromPtr(void* ptr) {
     uintptr_t startBlock = (uintptr_t)s_first + PAGE_SIZE;
     size_t index = ((uintptr_t)ptr - startBlock) / PAGE_SIZE;
     return (Header*)((uintptr_t)s_first + index * sizeof(Header));
+}
+
+bool PageHeap::isManaged(void *ptr) {
+  uintptr_t start = (uintptr_t)s_first + PAGE_SIZE;
+  uintptr_t end = start + (s_maxPages * PAGE_SIZE);
+  return (uintptr_t)ptr >= start && (uintptr_t)ptr < end;
 }

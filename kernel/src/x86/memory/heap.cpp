@@ -243,8 +243,6 @@ constexpr uint8_t DEBUG_HEIGHT = 3;
 void Heap::redrawDebug() {
     if (!s_debug) return;
 
-
-
     drawDebugBoxBorder();
 
     char buffer[DEBUG_WIDTH - 2];
