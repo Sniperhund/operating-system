@@ -8,6 +8,13 @@ if [ "$1" == "--symbol" ]; then
     exit 0
 fi
 
+if [ "$1" == "--build" ]; then
+    (cd libc && make all)
+    (cd programs && make all)
+    (cd kernel && make build)
+    exit 0
+fi
+
 if ! mountpoint -q /mnt/mydisk; then
     (cd kernel && make mount-disk)
 fi
